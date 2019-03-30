@@ -1,0 +1,16 @@
+{
+  "id": "libnetworkstack",
+  "name": "Lib Network Stack",
+  "description": "Some tooling for managing network ID's, and a few other things.",
+  "version": "$version",
+  "side": "universal",
+  "initializers": [
+  ],
+  "requires": {
+    "fabric": "*"
+  },
+  "mixins": {
+    "client": "libnetworkstack.client.json",
+    "common": "libnetworkstack.common.json"
+  }
+}
