@@ -4,10 +4,8 @@ import java.util.function.Function;
 
 import io.netty.buffer.ByteBuf;
 
-import buildcraft.api.core.InvalidInputDataException;
-
 public abstract class NetKeyMapper<T> {
-    public static final int LENGTH_DYNAMIC = TreeNetIdBase.LENGTH_DYNAMIC;
+    public static final int LENGTH_DYNAMIC = TreeNetIdBase.DYNAMIC_LENGTH;
 
     public final Class<T> clazz;
 

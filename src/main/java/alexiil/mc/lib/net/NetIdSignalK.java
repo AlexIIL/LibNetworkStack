@@ -1,10 +1,12 @@
 package alexiil.mc.lib.net;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
-import buildcraft.api.core.InvalidInputDataException;
-
-public class NetIdSignalK<T> extends NetIdBase {
+public class NetIdSignalK<T> extends NetIdTyped<T> {
 
     @FunctionalInterface
     public interface IMsgSignalReceiverK<T> {
@@ -13,18 +15,8 @@ public class NetIdSignalK<T> extends NetIdBase {
 
     private IMsgSignalReceiverK<T> receiver;
 
-    public final ParentNetIdTyped<T> key;
-
-    public NetIdSignalK(ParentNetIdTyped<T> parent, String name) {
-        this(parent, name, parent);
-    }
-
-    public NetIdSignalK(ParentNetId parent, String name, ParentNetIdTyped<T> key) {
+    public NetIdSignalK(ParentNetIdSingle<T> parent, String name) {
         super(parent, name, 0);
-        if (!parent.isParent(key)) {
-            throw new IllegalArgumentException("");
-        }
-        this.key = key;
     }
 
     public NetIdSignalK<T> setReceiver(IMsgSignalReceiverK<T> receiver) {
@@ -32,22 +24,27 @@ public class NetIdSignalK<T> extends NetIdBase {
         return this;
     }
 
-    public void sendSimple(T obj) {
-        // also todo: how should player connections work?
-        IMsgWriteCtx ctx = new MessageContext.Write(null, this);
-        ctx.putKey(key, obj);
-        sendFull(ctx);
-    }
-
-    public void sendFull(IMsgWriteCtx ctx) {
-        // TODO!
-    }
-
     @Override
-    public void receive(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    protected void receive(ByteBuf buffer, IMsgReadCtx ctx, T obj) {
         if (receiver != null) {
-            T obj = ctx.getKey(key);
             receiver.handle(obj, ctx);
         }
+    }
+
+    /** Sends this signal over the specified connection */
+    public void send(ActiveConnection connection, T obj) {
+        ByteBuf buffer = hasFixedLength() ? Unpooled.buffer(totalLength) : Unpooled.buffer();
+        MessageContext.Write ctx = new MessageContext.Write(connection, this);
+        if (parent.pathContainsDynamicParent) {
+            List<TreeNetIdBase> nPath = new ArrayList<>();
+            parent.writeDynamicContext(buffer, ctx, obj, nPath);
+            nPath.add(this);
+            TreeNetIdBase[] array = nPath.toArray(new TreeNetIdBase[0]);
+            InternalMsgUtil.send(connection, this, new NetIdPath(array), buffer);
+        } else {
+            parent.writeContext(buffer, ctx, obj);
+            InternalMsgUtil.send(connection, this, path, buffer);
+        }
+        buffer.release();
     }
 }

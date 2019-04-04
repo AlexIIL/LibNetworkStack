@@ -2,19 +2,17 @@ package alexiil.mc.lib.net;
 
 public abstract class MessageContext implements IMsgCtx {
 
-    public final NetworkSide side;
+    public final ActiveConnection connection;
     public final NetIdBase id;
-    public final Object[] values;
 
-    public MessageContext(NetworkSide side, NetIdBase id) {
-        this.side = side;
+    public MessageContext(ActiveConnection connection, NetIdBase id) {
+        this.connection = connection;
         this.id = id;
-        this.values = new Object[id.parent.nextKeyValueIndex];
     }
 
     @Override
-    public NetworkSide getNetSide() {
-        return side;
+    public ActiveConnection getConnection() {
+        return connection;
     }
 
     @Override
@@ -22,26 +20,15 @@ public abstract class MessageContext implements IMsgCtx {
         return id;
     }
 
-    @Override
-    public <T> void putKey(ParentNetIdTyped<T> key, T value) {
-        values[key.keyValueIndex] = value;
-    }
-
-    @Override
-    public <T> T getKey(ParentNetIdTyped<T> key) {
-        return key.clazz.cast(values[key.keyValueIndex]);
-    }
-
     public static class Read extends MessageContext implements IMsgReadCtx {
-
-        public Read(NetworkSide side, NetIdBase id) {
-            super(side, id);
+        public Read(ActiveConnection connection, NetIdBase id) {
+            super(connection, id);
         }
     }
 
     public static class Write extends MessageContext implements IMsgWriteCtx {
-        public Write(NetworkSide side, NetIdBase id) {
-            super(side, id);
+        public Write(ActiveConnection connection, NetIdBase id) {
+            super(connection, id);
         }
     }
 }

@@ -5,6 +5,7 @@
   "version": "$version",
   "side": "universal",
   "initializers": [
+    "alexiil.mc.lib.net.LibNetworkStack"
   ],
   "requires": {
     "fabric": "*"

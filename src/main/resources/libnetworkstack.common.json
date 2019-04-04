@@ -1,8 +1,9 @@
 {
   "required": true,
-  "package": "alexiil.mc.lib.net.mixin",
+  "package": "alexiil.mc.lib.net.mixin.impl",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "NetworkStateMixin"
   ],
   "injectors": {
     "defaultRequire": 1

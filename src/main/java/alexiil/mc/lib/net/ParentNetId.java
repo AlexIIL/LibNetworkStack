@@ -2,40 +2,25 @@ package alexiil.mc.lib.net;
 
 import javax.annotation.Nullable;
 
-public class ParentNetId extends TreeNetIdBase {
+public final class ParentNetId extends ParentNetIdBase {
 
-    @Nullable
-    public final ParentNetId parent;
-
-    final int keyValueIndex;
-    final int nextKeyValueIndex;
-
-    public ParentNetId(@Nullable ParentNetId parent, String name, int length) {
-        super(parent, name, length);
-        this.parent = parent;
-        this.keyValueIndex = parent == null ? 0 : parent.nextKeyValueIndex;
-        if (this instanceof ParentNetIdKey<?>) {
-            this.nextKeyValueIndex = keyValueIndex + 1;
-        } else {
-            this.nextKeyValueIndex = keyValueIndex;
-        }
+    public ParentNetId(@Nullable ParentNetIdBase parent, String name) {
+        super(parent, name, 0);
     }
 
     public NetIdData idData(String name) {
-        return new NetIdData(this, name);
+        return new NetIdData(this, name, TreeNetIdBase.DYNAMIC_LENGTH);
+    }
+
+    public NetIdData idData(String name, int dataLength) {
+        return new NetIdData(this, name, dataLength);
     }
 
     public NetIdSignal idSignal(String name) {
         return new NetIdSignal(this, name);
     }
 
-    public boolean isParent(ParentNetId other) {
-        if (other == this) {
-            return true;
-        }
-        if (parent == null) {
-            return false;
-        }
-        return parent.isParent(other);
+    public ParentNetId child(String childName) {
+        return new ParentNetId(this, childName);
     }
 }

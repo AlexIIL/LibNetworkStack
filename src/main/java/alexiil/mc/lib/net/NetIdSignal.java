@@ -1,10 +1,9 @@
 package alexiil.mc.lib.net;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
-import buildcraft.api.core.InvalidInputDataException;
-
-public class NetIdSignal extends NetIdBase {
+public final class NetIdSignal extends NetIdBase {
 
     @FunctionalInterface
     public interface IMsgSignalReceiver {
@@ -17,20 +16,21 @@ public class NetIdSignal extends NetIdBase {
         super(parent, name, 0);
     }
 
-    public void setReceiver(IMsgSignalReceiver receiver) {
+    public NetIdSignal setReceiver(IMsgSignalReceiver receiver) {
         this.receiver = receiver;
+        return this;
     }
 
     @Override
-    protected void send(ConnectionType connection, ByteBuf buf, IMsgWriteCtx ctx) {
-        // TODO Auto-generated method stub
-        throw new AbstractMethodError("// TODO: Implement this!");
-    }
-
-    @Override
-    public void receive(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    public boolean receive(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         if (receiver != null) {
             receiver.handle(ctx);
         }
+        return true;
+    }
+
+    /** Sends this signal over the specified connection */
+    public void send(ActiveConnection connection) {
+        InternalMsgUtil.send(connection, this, path, Unpooled.EMPTY_BUFFER);
     }
 }

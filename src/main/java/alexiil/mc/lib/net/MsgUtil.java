@@ -4,8 +4,6 @@ import java.nio.charset.StandardCharsets;
 
 import io.netty.buffer.ByteBuf;
 
-import buildcraft.api.core.InvalidInputDataException;
-
 public class MsgUtil {
 
     public static void writeUTF(ByteBuf buffer, String string) {
@@ -46,7 +44,7 @@ public class MsgUtil {
         }
         if (enums.length == 0) {
             throw new IllegalArgumentException(
-                "Tried to read an enum value without any values! How did you write this?");
+                "Tried to read an enum value without any values! We don't have any non-null values to return!");
         }
         if (enums.length == 1) {
             return enums[0];
