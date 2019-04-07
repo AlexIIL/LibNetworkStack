@@ -8,7 +8,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 archivesBaseName = "LibNetworkStack"
-version = "0.2.1"
+version = "0.2.2"
 
 minecraft {
 }
@@ -16,7 +16,7 @@ minecraft {
 dependencies {
     minecraft "com.mojang:minecraft:19w14b"
     mappings "net.fabricmc:yarn:19w14b.4"
-    modCompile "net.fabricmc:fabric-loader:0.4.0+build.114"
+    modCompile "net.fabricmc:fabric-loader:0.4.0+build.115"
 
     //Fabric api
     modCompile "net.fabricmc:fabric:0.2.6.121"
