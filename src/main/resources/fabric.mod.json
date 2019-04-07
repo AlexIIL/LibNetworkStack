@@ -1,17 +1,23 @@
 {
+  "schemaVersion": 1,
   "id": "libnetworkstack",
   "name": "Lib Network Stack",
   "description": "Some tooling for managing network ID's, and a few other things.",
   "version": "$version",
-  "side": "universal",
-  "initializers": [
-    "alexiil.mc.lib.net.LibNetworkStack"
-  ],
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "alexiil.mc.lib.net.LibNetworkStack"
+    ]
+  },
   "requires": {
+    "fabricloader": ">=0.4.0",
     "fabric": "*"
   },
   "mixins": {
     "client": "libnetworkstack.client.json",
     "common": "libnetworkstack.common.json"
-  }
+  },
+  "icon": "assets/libnetworkstack/icon.png"
 }
+
