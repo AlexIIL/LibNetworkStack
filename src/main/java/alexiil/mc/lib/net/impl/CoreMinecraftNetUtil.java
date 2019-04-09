@@ -69,6 +69,19 @@ public class CoreMinecraftNetUtil {
         return list;
     }
 
+    public static ActiveMinecraftConnection getConnection(PlayerEntity player) {
+        if (player == null) {
+            throw new NullPointerException("player");
+        }
+        if (player instanceof ServerPlayerEntity) {
+            return getServerConnection((PacketContext) ((ServerPlayerEntity) player).networkHandler);
+        } else if (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player) {
+            return currentClientConnection;
+        } else {
+            throw new IllegalArgumentException("Unknown PlayerEntity " + player.getClass());
+        }
+    }
+
     public static void load() {
         ClientSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
             onClientReceivePacket(ctx, buffer);

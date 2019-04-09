@@ -14,7 +14,8 @@ import alexiil.mc.lib.net.LibNetworkStack;
 import alexiil.mc.lib.net.McNetworkStack;
 import alexiil.mc.lib.net.NetIdData;
 
-/** A connection on the client side to the server. */
+/** A connection to the other side - this is either an {@link ActiveClientConnection} or an
+ * {@link ActiveServerConnection}. */
 public abstract class ActiveMinecraftConnection extends BufferedConnection {
 
     // As this is networking we need to ensure that we send as little data as possible
