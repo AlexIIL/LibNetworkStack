@@ -15,7 +15,7 @@ repositories {
 }
 
 dependencies {
-    modCompile "alexiil.mc.lib:libnetworkstack:0.3.1"
+    modCompile "alexiil.mc.lib:libnetworkstack:0.1.0"
 }
 ```
 
