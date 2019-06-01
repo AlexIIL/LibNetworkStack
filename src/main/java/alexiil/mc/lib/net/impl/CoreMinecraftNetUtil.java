@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.netty.buffer.ByteBuf;
-
 import net.fabricmc.fabric.api.event.client.ClientTickCallback;
 import net.fabricmc.fabric.api.event.server.ServerStopCallback;
 import net.fabricmc.fabric.api.event.server.ServerTickCallback;
@@ -19,17 +17,20 @@ import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
 import net.fabricmc.fabric.api.server.PlayerStream;
 
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.NetworkState;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-import alexiil.mc.lib.net.ActiveConnection;
 import alexiil.mc.lib.net.InvalidInputDataException;
 import alexiil.mc.lib.net.LibNetworkStack;
+import alexiil.mc.lib.net.NetByteBuf;
 import alexiil.mc.lib.net.mixin.api.INetworkStateMixin;
 
 public class CoreMinecraftNetUtil {
@@ -42,8 +43,8 @@ public class CoreMinecraftNetUtil {
     private static ActiveClientConnection currentClientConnection;
     private static final Map<PacketContext, ActiveServerConnection> serverConnections = new HashMap<>();
 
-    public static List<ActiveConnection> getNearbyActiveConnections(BlockEntity be, int distance) {
-        List<ActiveConnection> list = new ArrayList<>();
+    public static List<ActiveMinecraftConnection> getNearbyActiveConnections(BlockEntity be, int distance) {
+        List<ActiveMinecraftConnection> list = new ArrayList<>();
         World w = be.getWorld();
         if (w == null) {
             return list;
@@ -69,14 +70,25 @@ public class CoreMinecraftNetUtil {
         return list;
     }
 
+    public static List<ActiveMinecraftConnection> getPlayersWatching(World world, BlockPos pos) {
+        List<PlayerEntity> players = PlayerStream.watching(world, pos).collect(Collectors.toList());
+        List<ActiveMinecraftConnection> list = new ArrayList<>();
+        for (PlayerEntity player : players) {
+            list.add(getConnection(player));
+        }
+        return list;
+    }
+
     public static ActiveMinecraftConnection getConnection(PlayerEntity player) {
         if (player == null) {
             throw new NullPointerException("player");
         }
         if (player instanceof ServerPlayerEntity) {
             return getServerConnection((PacketContext) ((ServerPlayerEntity) player).networkHandler);
-        } else if (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player) {
-            return currentClientConnection;
+        } else if (player.world.isClient
+            && (currentClientConnection == null && player == MinecraftClient.getInstance().player)
+            || (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player)) {
+            return getOrCreateClientConnection((PacketContext) MinecraftClient.getInstance().player.networkHandler);
         } else {
             throw new IllegalArgumentException("Unknown PlayerEntity " + player.getClass());
         }
@@ -84,28 +96,24 @@ public class CoreMinecraftNetUtil {
 
     public static void load() {
         ClientSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
-            onClientReceivePacket(ctx, buffer);
+            onClientReceivePacket(ctx, NetByteBuf.asNetByteBuf(buffer));
         });
         ServerSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
-            onServerReceivePacket(ctx, buffer);
+            onServerReceivePacket(ctx, NetByteBuf.asNetByteBuf(buffer));
         });
 
         ClientTickCallback.EVENT.register(client -> onClientTick());
         ServerTickCallback.EVENT.register(server -> onServerTick());
         ServerStopCallback.EVENT.register(server -> onServerStop());
 
-        INetworkStateMixin game = (INetworkStateMixin) NetworkState.GAME;
-        clientExpectedId = game.libnetworkstack_registerPacket(NetworkSide.CLIENT, CompactDataPacketToClient.class);
-        serverExpectedId = game.libnetworkstack_registerPacket(NetworkSide.SERVER, CompactDataPacketToServer.class);
+        INetworkStateMixin play = (INetworkStateMixin) NetworkState.PLAY;
+        clientExpectedId = play.libnetworkstack_registerPacket(NetworkSide.CLIENT, CompactDataPacketToClient.class);
+        serverExpectedId = play.libnetworkstack_registerPacket(NetworkSide.SERVER, CompactDataPacketToServer.class);
     }
 
-    static void onClientReceivePacket(PacketContext ctx, ByteBuf buffer) {
-        ActiveClientConnection connection = currentClientConnection;
-        if (connection == null || connection.getMinecraftContext() != ctx) {
-            connection = new ActiveClientConnection((ClientPlayNetworkHandler) ctx);
-            currentClientConnection = connection;
-        }
-        ByteBuf b = buffer.copy();
+    static void onClientReceivePacket(PacketContext ctx, NetByteBuf buffer) {
+        ActiveClientConnection connection = getOrCreateClientConnection(ctx);
+        NetByteBuf b = buffer.copy();
         ActiveClientConnection c = connection;
         ctx.getTaskQueue().execute(() -> {
             try {
@@ -116,13 +124,32 @@ public class CoreMinecraftNetUtil {
         });
     }
 
-    static void onServerReceivePacket(PacketContext ctx, ByteBuf buffer) {
+    /** @return The current client connection. Throws an exception if this is not available right now (likely because
+     *         the client hasn't joined a world). */
+    public static ActiveMinecraftConnection getClientConnection() {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        if (player == null) {
+            throw new IllegalStateException("The client is not currently connected to any server!");
+        }
+        return getOrCreateClientConnection((PacketContext) player.networkHandler);
+    }
+
+    private static ActiveClientConnection getOrCreateClientConnection(PacketContext ctx) {
+        ActiveClientConnection connection = currentClientConnection;
+        if (connection == null || connection.getMinecraftContext() != ctx) {
+            connection = new ActiveClientConnection((ClientPlayNetworkHandler) ctx);
+            currentClientConnection = connection;
+        }
+        return connection;
+    }
+
+    static void onServerReceivePacket(PacketContext ctx, NetByteBuf buffer) {
         ActiveServerConnection connection = getServerConnection(ctx);
         if (connection == null) {
             return;
         }
 
-        ByteBuf b = buffer.copy();
+        NetByteBuf b = buffer.copy();
         ctx.getTaskQueue().execute(() -> {
             try {
                 connection.onReceiveRawData(b);

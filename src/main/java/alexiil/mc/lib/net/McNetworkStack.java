@@ -2,8 +2,6 @@ package alexiil.mc.lib.net;
 
 import java.util.Objects;
 
-import io.netty.buffer.ByteBuf;
-
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.container.Container;
 import net.minecraft.entity.Entity;
@@ -11,7 +9,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
 import alexiil.mc.lib.net.NetObjectCache.IEntrySerialiser;
@@ -35,7 +32,7 @@ public class McNetworkStack {
     static {
         BLOCK_ENTITY = new ParentNetIdSingle<BlockEntity>(ROOT, BlockEntity.class, "block_entity", 3 * Integer.BYTES) {
             @Override
-            public BlockEntity readContext(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+            public BlockEntity readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 ActiveMinecraftConnection mcConn = (ActiveMinecraftConnection) ctx.getConnection();
                 PlayerEntity player = mcConn.ctx.getPlayer();
                 int x = buffer.readInt();
@@ -45,7 +42,7 @@ public class McNetworkStack {
             }
 
             @Override
-            public void writeContext(ByteBuf buffer, IMsgWriteCtx ctx, BlockEntity value) {
+            public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, BlockEntity value) {
                 buffer.writeInt(value.getPos().getX());
                 buffer.writeInt(value.getPos().getY());
                 buffer.writeInt(value.getPos().getZ());
@@ -53,20 +50,20 @@ public class McNetworkStack {
         };
         ENTITY = new ParentNetIdSingle<Entity>(ROOT, Entity.class, "entity", Integer.BYTES) {
             @Override
-            public Entity readContext(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+            public Entity readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 ActiveMinecraftConnection mcConn = (ActiveMinecraftConnection) ctx.getConnection();
                 PlayerEntity player = mcConn.ctx.getPlayer();
                 return player.world.getEntityById(buffer.readInt());
             }
 
             @Override
-            public void writeContext(ByteBuf buffer, IMsgWriteCtx ctx, Entity value) {
+            public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, Entity value) {
                 buffer.writeInt(value.getEntityId());
             }
         };
         CONTAINER = new ParentNetIdSingle<Container>(ROOT, Container.class, "container", Integer.BYTES) {
             @Override
-            public Container readContext(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+            public Container readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 ActiveMinecraftConnection mcConn = (ActiveMinecraftConnection) ctx.getConnection();
                 PlayerEntity player = mcConn.ctx.getPlayer();
                 int syncId = buffer.readInt();
@@ -78,7 +75,7 @@ public class McNetworkStack {
             }
 
             @Override
-            public void writeContext(ByteBuf buffer, IMsgWriteCtx ctx, Container value) {
+            public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, Container value) {
                 buffer.writeInt(value.syncId);
             }
         };
@@ -110,31 +107,29 @@ public class McNetworkStack {
             }, new IEntrySerialiser<ItemStack>() {
 
                 @Override
-                public void write(ItemStack obj, ActiveConnection connection, ByteBuf buffer) {
-                    PacketByteBuf packetBuf = new PacketByteBuf(buffer);
+                public void write(ItemStack obj, ActiveConnection connection, NetByteBuf buffer) {
                     if (obj.isEmpty()) {
-                        packetBuf.writeBoolean(false);
+                        buffer.writeBoolean(false);
                     } else {
-                        packetBuf.writeBoolean(true);
+                        buffer.writeBoolean(true);
                         Item item_1 = obj.getItem();
-                        packetBuf.writeVarInt(Item.getRawIdByItem(item_1));
+                        buffer.writeVarInt(Item.getRawIdByItem(item_1));
                         CompoundTag tag = null;
                         if (item_1.canDamage() || item_1.requiresClientSync()) {
                             tag = obj.getTag();
                         }
-                        packetBuf.writeCompoundTag(tag);
+                        buffer.writeCompoundTag(tag);
                     }
                 }
 
                 @Override
-                public ItemStack read(ActiveConnection connection, ByteBuf buffer) {
-                    PacketByteBuf packetBuf = new PacketByteBuf(buffer);
-                    if (!packetBuf.readBoolean()) {
+                public ItemStack read(ActiveConnection connection, NetByteBuf buffer) {
+                    if (!buffer.readBoolean()) {
                         return ItemStack.EMPTY;
                     } else {
-                        int id = packetBuf.readVarInt();
+                        int id = buffer.readVarInt();
                         ItemStack stack = new ItemStack(Item.byRawId(id));
-                        stack.setTag(packetBuf.readCompoundTag());
+                        stack.setTag(buffer.readCompoundTag());
                         return stack;
                     }
                 }

@@ -1,7 +1,5 @@
 package alexiil.mc.lib.net;
 
-import io.netty.buffer.ByteBuf;
-
 public abstract class NetIdTyped<T> extends NetIdBase {
 
     public final ParentNetIdSingle<T> parent;
@@ -9,6 +7,9 @@ public abstract class NetIdTyped<T> extends NetIdBase {
     NetIdTyped(ParentNetIdSingle<T> parent, String name, int length) {
         super(parent, name, length);
         this.parent = parent;
+        if (!(this instanceof ResolvedNetId)) {
+            parent.addChild(this);
+        }
     }
 
     @Override
@@ -17,7 +18,7 @@ public abstract class NetIdTyped<T> extends NetIdBase {
     }
 
     @Override
-    public final boolean receive(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    public final boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         T obj = parent.readContext(buffer, ctx);
         if (obj == null) {
             return false;
@@ -27,5 +28,8 @@ public abstract class NetIdTyped<T> extends NetIdBase {
         }
     }
 
-    protected abstract void receive(ByteBuf buffer, IMsgReadCtx ctx, T obj) throws InvalidInputDataException;
+    protected abstract void receive(NetByteBuf buffer, IMsgReadCtx ctx, T obj) throws InvalidInputDataException;
+
+    /** Sends this net id over the specified connection */
+    public abstract void send(ActiveConnection connection, T obj);
 }

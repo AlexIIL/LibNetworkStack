@@ -1,7 +1,5 @@
 package alexiil.mc.lib.net;
 
-import io.netty.buffer.ByteBuf;
-
 final class ResolvedNetId<T> extends NetIdTyped<T> {
 
     final NetIdTyped<?> wrapped;
@@ -12,11 +10,17 @@ final class ResolvedNetId<T> extends NetIdTyped<T> {
     }
 
     @Override
-    protected void receive(ByteBuf buffer, IMsgReadCtx ctx, T obj) throws InvalidInputDataException {
+    protected void receive(NetByteBuf buffer, IMsgReadCtx ctx, T obj) throws InvalidInputDataException {
         receive0(buffer, ctx, obj, wrapped);
     }
 
-    private static <U> void receive0(ByteBuf buffer, IMsgReadCtx ctx, Object obj, NetIdTyped<U> wrapped)
+    @Override
+    public void send(ActiveConnection connection, T obj) {
+        throw new IllegalStateException("You can never write out a Resolved Net ID!"
+            + " (How did you even call this anyway? This is meant to be an internal class!)");
+    }
+
+    private static <U> void receive0(NetByteBuf buffer, IMsgReadCtx ctx, Object obj, NetIdTyped<U> wrapped)
         throws InvalidInputDataException {
         wrapped.receive(buffer, ctx, wrapped.parent.clazz.cast(obj));
     }

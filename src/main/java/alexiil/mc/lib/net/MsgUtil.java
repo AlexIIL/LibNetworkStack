@@ -2,11 +2,9 @@ package alexiil.mc.lib.net;
 
 import java.nio.charset.StandardCharsets;
 
-import io.netty.buffer.ByteBuf;
-
 public class MsgUtil {
 
-    public static void writeUTF(ByteBuf buffer, String string) {
+    public static void writeUTF(NetByteBuf buffer, String string) {
         byte[] data = string.getBytes(StandardCharsets.UTF_8);
         if (data.length > 0xFF_FF) {
             throw new IllegalArgumentException("Cannot write a string with more than " + 0xFF_FF + " bytes!");
@@ -15,14 +13,14 @@ public class MsgUtil {
         buffer.writeBytes(data);
     }
 
-    public static String readUTF(ByteBuf buffer) {
+    public static String readUTF(NetByteBuf buffer) {
         int len = buffer.readUnsignedShort();
         byte[] data = new byte[len];
         buffer.readBytes(data);
         return new String(data, StandardCharsets.UTF_8);
     }
 
-    public static void writeEnum(ByteBuf buffer, Enum<?> value) {
+    public static void writeEnum(NetByteBuf buffer, Enum<?> value) {
         Enum<?>[] possible = value.getDeclaringClass().getEnumConstants();
         if (possible == null) {
             throw new IllegalArgumentException("Not an enum " + value.getClass());
@@ -36,7 +34,7 @@ public class MsgUtil {
         buffer.writeInt(value.ordinal());
     }
 
-    public static <E extends Enum<E>> E readEnum(ByteBuf buffer, Class<E> enumClass) throws InvalidInputDataException {
+    public static <E extends Enum<E>> E readEnum(NetByteBuf buffer, Class<E> enumClass) throws InvalidInputDataException {
         // No need to lookup the declaring class as you cannot refer to sub-classes of Enum.
         E[] enums = enumClass.getEnumConstants();
         if (enums == null) {

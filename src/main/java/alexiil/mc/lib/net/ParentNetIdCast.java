@@ -1,7 +1,5 @@
 package alexiil.mc.lib.net;
 
-import io.netty.buffer.ByteBuf;
-
 public final class ParentNetIdCast<Super, Sub extends Super> extends ParentNetIdDuel<Super, Sub> {
 
     public ParentNetIdCast(ParentNetIdSingle<Super> parent, String name, Class<Sub> clazz) {
@@ -14,12 +12,12 @@ public final class ParentNetIdCast<Super, Sub extends Super> extends ParentNetId
     }
 
     @Override
-    protected void writeContext0(ByteBuf buffer, IMsgWriteCtx ctx, Sub value) {
+    protected void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, Sub value) {
         // Nothing to write
     }
 
     @Override
-    protected Sub readContext(ByteBuf buffer, IMsgReadCtx ctx, Super parentValue) throws InvalidInputDataException {
+    protected Sub readContext(NetByteBuf buffer, IMsgReadCtx ctx, Super parentValue) throws InvalidInputDataException {
         if (clazz.isInstance(parentValue)) {
             return clazz.cast(parentValue);
         } else {

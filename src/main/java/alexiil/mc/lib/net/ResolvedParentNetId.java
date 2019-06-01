@@ -1,14 +1,17 @@
 package alexiil.mc.lib.net;
 
-import io.netty.buffer.ByteBuf;
-
 final class ResolvedParentNetId<Parent, T> extends ParentNetIdDuel<Parent, T> {
 
-    public final DynamicNetId<T> dynamicId;
+    public final ParentNetIdDuel<Parent, T> reader;
 
-    ResolvedParentNetId(ParentNetIdSingle<Parent> parent, DynamicNetId<T> dynamicId) {
-        super(parent, dynamicId.name, dynamicId.clazz, 0);
-        this.dynamicId = dynamicId;
+    ResolvedParentNetId(ParentNetIdSingle<Parent> parent, ParentNetIdDuel<Parent, T> reader) {
+        super(parent, reader.name, reader.clazz, reader.length);
+        this.reader = reader;
+    }
+
+    @Override
+    TreeNetIdBase getChild(String childName) {
+        return reader.getChild(childName);
     }
 
     @Override
@@ -17,12 +20,12 @@ final class ResolvedParentNetId<Parent, T> extends ParentNetIdDuel<Parent, T> {
     }
 
     @Override
-    protected void writeContext0(ByteBuf buffer, IMsgWriteCtx ctx, T value) {
+    protected void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
         throw new IllegalStateException("ResolvedParentNetId must only be used for reading!");
     }
 
     @Override
-    protected T readContext(ByteBuf buffer, IMsgReadCtx ctx, Parent parentValue) throws InvalidInputDataException {
-        return dynamicId.childExtractor.apply(parentValue);
+    protected T readContext(NetByteBuf buffer, IMsgReadCtx ctx, Parent parentValue) throws InvalidInputDataException {
+        return reader.readContext(buffer, ctx, parentValue);
     }
 }

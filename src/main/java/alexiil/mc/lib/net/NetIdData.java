@@ -1,17 +1,15 @@
 package alexiil.mc.lib.net;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+public final class NetIdData extends NetIdSeparate {
 
-public class NetIdData extends NetIdBase {
     @FunctionalInterface
     public interface IMsgDataReceiver {
-        void receive(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
+        void receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
     }
 
     @FunctionalInterface
     public interface IMsgDataWriter {
-        void write(ByteBuf buffer, IMsgWriteCtx ctx);
+        void write(NetByteBuf buffer, IMsgWriteCtx ctx);
     }
 
     private IMsgDataReceiver receiver = (buffer, ctx) -> {
@@ -35,7 +33,7 @@ public class NetIdData extends NetIdBase {
     }
 
     @Override
-    public boolean receive(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    public boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         receiver.receive(buffer, ctx);
         return true;
     }
@@ -46,10 +44,13 @@ public class NetIdData extends NetIdBase {
     }
 
     public void send(ActiveConnection connection, IMsgDataWriter writer) {
-        ByteBuf buffer = hasFixedLength() ? Unpooled.buffer(totalLength) : Unpooled.buffer();
+        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
         writer.write(buffer, ctx);
-        InternalMsgUtil.send(connection, this, path, buffer);
+        if (buffer.readableBytes() > 0) {
+            // Only send data packets if anything was actually written.
+            InternalMsgUtil.send(connection, this, path, buffer);
+        }
         buffer.release();
     }
 }

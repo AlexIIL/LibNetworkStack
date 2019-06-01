@@ -2,8 +2,6 @@ package alexiil.mc.lib.net;
 
 import java.util.List;
 
-import io.netty.buffer.ByteBuf;
-
 public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
 
     public final ParentNetIdSingle<Parent> parent;
@@ -11,6 +9,9 @@ public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
     public ParentNetIdDuel(ParentNetIdSingle<Parent> parent, String name, Class<T> clazz, int length) {
         super(parent, clazz, name, length);
         this.parent = parent;
+        if (!(this instanceof ResolvedParentNetId) && !(this instanceof ResolvedDynamicNetId)) {
+            parent.addChild(this);
+        }
     }
 
     public ParentNetIdDuel(ParentNetIdSingle<Parent> parent, String name, Class<T> clazz) {
@@ -23,14 +24,14 @@ public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
     }
 
     @Override
-    public final void writeContext(ByteBuf buffer, IMsgWriteCtx ctx, T value) {
+    public final void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
         Parent p = extractParent(value);
         parent.writeContext(buffer, ctx, p);
         writeContext0(buffer, ctx, value);
     }
 
     @Override
-    public void writeDynamicContext(ByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
+    public void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
         Parent p = extractParent(value);
         parent.writeDynamicContext(buffer, ctx, p, resolvedPath);
         writeContext0(buffer, ctx, value);
@@ -39,10 +40,10 @@ public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
 
     protected abstract Parent extractParent(T value);
 
-    protected abstract void writeContext0(ByteBuf buffer, IMsgWriteCtx ctx, T value);
+    protected abstract void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, T value);
 
     @Override
-    public final T readContext(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    public final T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         Parent p = parent.readContext(buffer, ctx);
         if (p == null) {
             return null;
@@ -52,6 +53,6 @@ public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
 
     /** @return The read value.
      * @throws InvalidInputDataException if the byte buffer contained invalid data. */
-    protected abstract T readContext(ByteBuf buffer, IMsgReadCtx ctx, Parent parentValue)
+    protected abstract T readContext(NetByteBuf buffer, IMsgReadCtx ctx, Parent parentValue)
         throws InvalidInputDataException;
 }

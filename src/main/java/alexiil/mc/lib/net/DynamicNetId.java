@@ -1,59 +1,41 @@
 package alexiil.mc.lib.net;
 
 import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-
-import com.google.common.collect.ImmutableSet;
-
-import io.netty.buffer.ByteBuf;
 
 public final class DynamicNetId<T> extends ParentNetIdSingle<T> {
 
-    public static final class ParentData<T> {
-        public final ParentNetIdSingle<T> parent;
-        public final T data;
-
-        public ParentData(ParentNetIdSingle<T> parent, T data) {
-            this.parent = parent;
-            this.data = data;
-        }
-
-        public void writeDynamicContext(ByteBuf buffer, IMsgWriteCtx ctx, List<TreeNetIdBase> resolvedPath) {
-            parent.writeDynamicContext(buffer, ctx, data, resolvedPath);
-        }
+    @FunctionalInterface
+    public interface LinkAccessor<T> {
+        DynamicNetLink<?, T> getLink(T value);
     }
 
-    final Function<T, ParentData<?>> parentExtractor;
-    final Function<Object, T> childExtractor;
-    final Set<ParentNetIdSingle<?>> possibleParents;
+    final LinkAccessor<T> linkGetter;
 
-    public DynamicNetId(Class<T> clazz, String name, Function<T, ParentData<?>> parentExtractor,
-        Function<Object, T> childExtractor, ParentNetIdSingle<?>... possibleParents) {
-        super(null, clazz, name, 0);
-        this.parentExtractor = parentExtractor;
-        this.childExtractor = childExtractor;
-        this.possibleParents = ImmutableSet.copyOf(possibleParents);
-        for (ParentNetIdSingle<?> p : possibleParents) {
-            p.addChild(this);
-        }
+    public DynamicNetId(Class<T> clazz, LinkAccessor<T> linkGetter) {
+        super(null, clazz, "", DYNAMIC_LENGTH);
+        this.linkGetter = linkGetter;
     }
 
     @Override
-    public T readContext(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    public T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         throw new IllegalStateException("Dynamic Net ID's must be fully resolved before they can be read!");
     }
 
     @Override
-    public void writeContext(ByteBuf buffer, IMsgWriteCtx ctx, T value) {
+    public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
         throw new IllegalStateException("Dynamic Net ID's must be written with the dynamic variant!");
     }
 
     @Override
-    public void writeDynamicContext(ByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
-        ParentData<?> data = parentExtractor.apply(value);
-        assert possibleParents.contains(data.parent);
-        data.writeDynamicContext(buffer, ctx, resolvedPath);
+    public void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
+        writeParent(buffer, ctx, linkGetter.getLink(value), resolvedPath);
         resolvedPath.add(this);
+    }
+
+    private <P> void writeParent(NetByteBuf buffer, IMsgWriteCtx ctx, DynamicNetLink<P, T> link,
+        List<TreeNetIdBase> resolvedPath) {
+        assert link.parentId.childId == this;
+        link.parentId.parent.writeDynamicContext(buffer, ctx, link.parent, resolvedPath);
+        resolvedPath.add(link.parentId);
     }
 }

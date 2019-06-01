@@ -1,13 +1,10 @@
 package alexiil.mc.lib.net;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
-public final class NetIdSignal extends NetIdBase {
+public final class NetIdSignal extends NetIdSeparate {
 
     @FunctionalInterface
     public interface IMsgSignalReceiver {
-        void handle(IMsgReadCtx ctx);
+        void handle(IMsgReadCtx ctx) throws InvalidInputDataException;
     }
 
     private IMsgSignalReceiver receiver;
@@ -22,7 +19,7 @@ public final class NetIdSignal extends NetIdBase {
     }
 
     @Override
-    public boolean receive(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    public boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         if (receiver != null) {
             receiver.handle(ctx);
         }
@@ -31,6 +28,6 @@ public final class NetIdSignal extends NetIdBase {
 
     /** Sends this signal over the specified connection */
     public void send(ActiveConnection connection) {
-        InternalMsgUtil.send(connection, this, path, Unpooled.EMPTY_BUFFER);
+        InternalMsgUtil.send(connection, this, path, NetByteBuf.EMPTY_BUFFER);
     }
 }

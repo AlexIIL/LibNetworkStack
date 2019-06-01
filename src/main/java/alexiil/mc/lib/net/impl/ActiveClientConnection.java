@@ -1,14 +1,13 @@
 package alexiil.mc.lib.net.impl;
 
-import io.netty.buffer.ByteBuf;
-
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.Packet;
 import net.minecraft.server.network.packet.CustomPayloadC2SPacket;
-import net.minecraft.util.PacketByteBuf;
+
+import alexiil.mc.lib.net.NetByteBuf;
 
 public class ActiveClientConnection extends ActiveMinecraftConnection {
     public final ClientPlayNetworkHandler netHandler;
@@ -20,12 +19,12 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
     }
 
     @Override
-    protected Packet<?> toNormalPacket(PacketByteBuf data) {
+    protected Packet<?> toNormalPacket(NetByteBuf data) {
         return new CustomPayloadC2SPacket(PACKET_ID, data);
     }
 
     @Override
-    protected Packet<?> toCompactPacket(int receiverId, ByteBuf data) {
+    protected Packet<?> toCompactPacket(int receiverId, NetByteBuf data) {
         byte[] bytes = new byte[data.readableBytes()];
         data.readBytes(bytes);
         return new CompactDataPacketToServer(receiverId, bytes);

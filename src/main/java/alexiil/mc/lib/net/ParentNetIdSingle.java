@@ -1,18 +1,55 @@
 package alexiil.mc.lib.net;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
-
-import io.netty.buffer.ByteBuf;
 
 public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
 
     public final Class<T> clazz;
 
-    public ParentNetIdSingle(ParentNetIdBase parent, Class<T> clazz, String name, int thisLength) {
+    final Map<String, NetIdTyped<T>> leafChildren = new HashMap<>();
+    final Map<String, ParentNetIdDuel<T, ?>> branchChildren = new HashMap<>();
+
+    ParentNetIdSingle(ParentNetIdBase parent, Class<T> clazz, String name, int thisLength) {
         super(parent, name, thisLength);
         this.clazz = clazz;
+    }
+
+    public ParentNetIdSingle(ParentNetId parent, Class<T> clazz, String name, int thisLength) {
+        super(parent, name, thisLength);
+        this.clazz = clazz;
+        if (parent != null) {
+            parent.addChild(this);
+        }
+    }
+
+    void addChild(NetIdTyped<T> netId) {
+        if (this instanceof ParentDynamicNetId) {
+            throw new IllegalArgumentException("ParentDynamicNetId can only have 1 child!");
+        }
+        if (leafChildren.containsKey(netId.name) || branchChildren.containsKey(netId.name)) {
+            throw new IllegalStateException("There is already a child with the name " + netId.name + "!");
+        }
+        leafChildren.put(netId.name, netId);
+    }
+
+    void addChild(ParentNetIdDuel<T, ?> netId) {
+        if (this instanceof ParentDynamicNetId) {
+            throw new IllegalArgumentException("ParentDynamicNetId can only have 1 child!");
+        }
+        if (leafChildren.containsKey(netId.name) || branchChildren.containsKey(netId.name)) {
+            throw new IllegalStateException("There is already a child with the name " + netId.name + "!");
+        }
+        branchChildren.put(netId.name, netId);
+    }
+
+    @Override
+    TreeNetIdBase getChild(String childName) {
+        NetIdTyped<T> leaf = leafChildren.get(childName);
+        return leaf != null ? leaf : branchChildren.get(childName);
     }
 
     @Override
@@ -43,11 +80,11 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
 
     /** @return The read value, or null if the parent couldn't be read.
      * @throws InvalidInputDataException if the byte buffer contained invalid data. */
-    public abstract T readContext(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
+    public abstract T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
 
-    public abstract void writeContext(ByteBuf buffer, IMsgWriteCtx ctx, T value);
+    public abstract void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value);
 
-    public void writeDynamicContext(ByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
+    public void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
         writeContext(buffer, ctx, value);
         Collections.addAll(resolvedPath, this.path.array);
     }

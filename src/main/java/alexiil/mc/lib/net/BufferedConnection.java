@@ -3,9 +3,6 @@ package alexiil.mc.lib.net;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 public abstract class BufferedConnection extends ActiveConnection {
 
     /** The minimum accepted value for {@link #ourMaxBandwidth} and {@link #theirMaxBandwidth}, in bytes per second. */
@@ -34,7 +31,7 @@ public abstract class BufferedConnection extends ActiveConnection {
             to = MIN_BANDWIDTH;
         }
         ourMaxBandwidth = to;
-        ByteBuf data = Unpooled.buffer(6);
+        NetByteBuf data = NetByteBuf.buffer(6);
         data.writeInt(InternalMsgUtil.ID_INTERNAL_NEW_BANDWIDTH);
         data.writeShort(to / MIN_BANDWIDTH);
         sendRawData0(data);
@@ -42,7 +39,7 @@ public abstract class BufferedConnection extends ActiveConnection {
     }
 
     @Override
-    public final void sendPacket(ByteBuf data, int packetId, NetIdBase netId, int priority) {
+    public final void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority) {
         if (!ENABLE_QUEUE) {
             sendRawData0(data);
             return;
@@ -63,7 +60,7 @@ public abstract class BufferedConnection extends ActiveConnection {
     }
 
     /** @return The maximum packet size that a single output packet can be. Used to try to keep the data sent to
-     *         {@link #sendRawData0(ByteBuf)} below this value when combining data into packets. */
+     *         {@link #sendRawData0(NetByteBuf)} below this value when combining data into packets. */
     protected int maximumPacketSize() {
         // Default to a 65K, so that we don't end up with huge output packets.
         return (1 << 16) - 10;
@@ -86,11 +83,11 @@ public abstract class BufferedConnection extends ActiveConnection {
             return;
         }
         if (packetQueue.size() == 1) {
-            ByteBuf data = packetQueue.remove().data;
+            NetByteBuf data = packetQueue.remove().data;
             sendRawData0(data);
             data.release();
         } else {
-            ByteBuf combined = Unpooled.buffer(queueLength);
+            NetByteBuf combined = NetByteBuf.buffer(queueLength);
             BufferedPacketInfo bpi;
             while ((bpi = packetQueue.poll()) != null) {
                 combined.writeBytes(bpi.data);
@@ -103,7 +100,7 @@ public abstract class BufferedConnection extends ActiveConnection {
     }
 
     @Override
-    public void onReceiveRawData(ByteBuf data) throws InvalidInputDataException {
+    public void onReceiveRawData(NetByteBuf data) throws InvalidInputDataException {
         while (data.readableBytes() > 0) {
             InternalMsgUtil.onReceive(this, data);
         }
@@ -111,7 +108,7 @@ public abstract class BufferedConnection extends ActiveConnection {
 
     /** Sends some raw data. It might contain multiple packets, half packets, or even less. Either way the
      * implementation should just directly send the data on to the other side, and ensure it arrives in-order. */
-    protected abstract void sendRawData0(ByteBuf data);
+    protected abstract void sendRawData0(NetByteBuf data);
 
     void updateTheirMaxBandwidth(int theirs) {
         theirs *= MIN_BANDWIDTH;
@@ -120,11 +117,11 @@ public abstract class BufferedConnection extends ActiveConnection {
     }
 
     static class BufferedPacketInfo {
-        final ByteBuf data;
+        final NetByteBuf data;
         final int priority;
         // final boolean delayable;
 
-        public BufferedPacketInfo(ByteBuf data, int priority) {
+        public BufferedPacketInfo(NetByteBuf data, int priority) {
             this.data = data;
             this.priority = priority;
         }

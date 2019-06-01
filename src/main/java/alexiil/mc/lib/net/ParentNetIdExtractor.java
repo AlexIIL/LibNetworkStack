@@ -2,8 +2,6 @@ package alexiil.mc.lib.net;
 
 import java.util.function.Function;
 
-import io.netty.buffer.ByteBuf;
-
 public final class ParentNetIdExtractor<Parent, T> extends ParentNetIdDuel<Parent, T> {
 
     private final Function<T, Parent> forward;
@@ -22,12 +20,12 @@ public final class ParentNetIdExtractor<Parent, T> extends ParentNetIdDuel<Paren
     }
 
     @Override
-    protected void writeContext0(ByteBuf buffer, IMsgWriteCtx ctx, T value) {
+    protected void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
         // NO-OP
     }
 
     @Override
-    protected T readContext(ByteBuf buffer, IMsgReadCtx ctx, Parent parentValue) throws InvalidInputDataException {
+    protected T readContext(NetByteBuf buffer, IMsgReadCtx ctx, Parent parentValue) throws InvalidInputDataException {
         return backward.apply(parentValue);
     }
 }

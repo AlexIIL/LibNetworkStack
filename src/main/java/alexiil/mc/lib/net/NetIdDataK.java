@@ -1,18 +1,18 @@
 package alexiil.mc.lib.net;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import java.util.ArrayList;
+import java.util.List;
 
-public class NetIdDataK<T> extends NetIdTyped<T> {
+public final class NetIdDataK<T> extends NetIdTyped<T> {
 
     @FunctionalInterface
     public interface IMsgDataReceiverK<T> {
-        void receive(T obj, ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
+        void receive(T obj, NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
     }
 
     @FunctionalInterface
     public interface IMsgDataWriterK<T> {
-        void write(T obj, ByteBuf buffer, IMsgWriteCtx ctx);
+        void write(T obj, NetByteBuf buffer, IMsgWriteCtx ctx);
     }
 
     private IMsgDataReceiverK<T> receiver = (t, buffer, ctx) -> {
@@ -36,21 +36,36 @@ public class NetIdDataK<T> extends NetIdTyped<T> {
     }
 
     @Override
-    public void receive(ByteBuf buffer, IMsgReadCtx ctx, T parentValue) throws InvalidInputDataException {
+    public void receive(NetByteBuf buffer, IMsgReadCtx ctx, T parentValue) throws InvalidInputDataException {
         receiver.receive(parentValue, buffer, ctx);
     }
 
     /** Sends this signal over the specified connection */
+    @Override
     public void send(ActiveConnection connection, T obj) {
         send(connection, obj, writer);
     }
 
     public void send(ActiveConnection connection, T obj, IMsgDataWriterK<T> writer) {
-        ByteBuf buffer = hasFixedLength() ? Unpooled.buffer(totalLength) : Unpooled.buffer();
+        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
-        parent.writeContext(buffer, ctx, obj);
+        final NetIdPath resolvedPath;
+        if (parent.pathContainsDynamicParent) {
+            List<TreeNetIdBase> nPath = new ArrayList<>();
+            parent.writeDynamicContext(buffer, ctx, obj, nPath);
+            nPath.add(this);
+            TreeNetIdBase[] array = nPath.toArray(new TreeNetIdBase[0]);
+            resolvedPath = new NetIdPath(array);
+        } else {
+            parent.writeContext(buffer, ctx, obj);
+            resolvedPath = this.path;
+        }
+        int headerLength = buffer.writerIndex();
         writer.write(obj, buffer, ctx);
-        InternalMsgUtil.send(connection, this, path, buffer);
+        if (headerLength != buffer.writerIndex()) {
+            // Only send data packets if anything was actually written.
+            InternalMsgUtil.send(connection, this, resolvedPath, buffer);
+        }
         buffer.release();
     }
 }

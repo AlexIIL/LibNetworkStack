@@ -2,8 +2,6 @@ package alexiil.mc.lib.net;
 
 import java.util.function.Function;
 
-import io.netty.buffer.ByteBuf;
-
 public abstract class NetKeyMapper<T> {
     public static final int LENGTH_DYNAMIC = TreeNetIdBase.DYNAMIC_LENGTH;
 
@@ -26,9 +24,9 @@ public abstract class NetKeyMapper<T> {
      * Note that any of the <em>parent</em> keys might be null if they failed to read!
      * 
      * @return null if the key couldn't be found in whatever context this requires. */
-    public abstract T read(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
+    public abstract T read(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
 
-    public abstract void write(ByteBuf buffer, IMsgWriteCtx ctx, T value);
+    public abstract void write(NetByteBuf buffer, IMsgWriteCtx ctx, T value);
 
     public static class ToString<T> extends NetKeyMapper<T> {
 
@@ -42,7 +40,7 @@ public abstract class NetKeyMapper<T> {
         }
 
         @Override
-        public T read(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+        public T read(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
             String s = MsgUtil.readUTF(buffer);
             T read = fromStringMapper.apply(s);
             if (read == null) {
@@ -52,7 +50,7 @@ public abstract class NetKeyMapper<T> {
         }
 
         @Override
-        public void write(ByteBuf buffer, IMsgWriteCtx ctx, T value) {
+        public void write(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
             MsgUtil.writeUTF(buffer, toStringMapper.apply(value));
         }
     }
@@ -64,12 +62,12 @@ public abstract class NetKeyMapper<T> {
         }
 
         @Override
-        public E read(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+        public E read(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
             return MsgUtil.readEnum(buffer, clazz);
         }
 
         @Override
-        public void write(ByteBuf buffer, IMsgWriteCtx ctx, E value) {
+        public void write(NetByteBuf buffer, IMsgWriteCtx ctx, E value) {
             MsgUtil.writeEnum(buffer, value);
         }
     }

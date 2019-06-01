@@ -7,22 +7,23 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 
-import io.netty.buffer.ByteBuf;
-
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import alexiil.mc.lib.net.ActiveConnection;
 import alexiil.mc.lib.net.DynamicNetId;
-import alexiil.mc.lib.net.DynamicNetId.ParentData;
+import alexiil.mc.lib.net.DynamicNetLink;
+import alexiil.mc.lib.net.DynamicNetLink.IDynamicLinkFactory;
 import alexiil.mc.lib.net.IMsgReadCtx;
 import alexiil.mc.lib.net.IMsgWriteCtx;
 import alexiil.mc.lib.net.InvalidInputDataException;
 import alexiil.mc.lib.net.MsgUtil;
+import alexiil.mc.lib.net.NetByteBuf;
 import alexiil.mc.lib.net.NetIdBase;
 import alexiil.mc.lib.net.NetIdData;
 import alexiil.mc.lib.net.NetIdDataK;
 import alexiil.mc.lib.net.NetIdSignal;
 import alexiil.mc.lib.net.NetIdSignalK;
+import alexiil.mc.lib.net.ParentDynamicNetId;
 import alexiil.mc.lib.net.ParentNetId;
 import alexiil.mc.lib.net.ParentNetIdCast;
 import alexiil.mc.lib.net.ParentNetIdDuel;
@@ -52,8 +53,8 @@ public class SimpleNetTester {
     static ActiveConnection side1;
     static ActiveConnection side2;
 
-    static final Queue<ByteBuf> incomingSide1 = new ArrayDeque<>();
-    static final Queue<ByteBuf> incomingSide2 = new ArrayDeque<>();
+    static final Queue<NetByteBuf> incomingSide1 = new ArrayDeque<>();
+    static final Queue<NetByteBuf> incomingSide2 = new ArrayDeque<>();
 
     public static final ParentNetId ROOT = new ParentNetId(null, "");
     public static final NetIdSignal SIGNAL_PING = ROOT.idSignal("ping");
@@ -67,36 +68,42 @@ public class SimpleNetTester {
     public static final NetIdData SPY_EQUIP = TF2_CLASS_SPY.idData("equip");
     public static final NetIdSignal SPY_SHOOT = TF2_CLASS_SPY.idSignal("shoot");
 
-    public static Tf2Player[] players = new Tf2Player[] { //
-        new Tf2Medic(),//
-    };
+    public static Tf2Player[] players = new Tf2Player[1];
 
-    public static final ParentNetIdSingle<Tf2Player> TF2_PLAYER =
-        new ParentNetIdSingle<Tf2Player>(TF2_GAME, Tf2Player.class, "player", Byte.BYTES) {
+    public static final DynamicNetId<AnimationElement> ANIMATED
+        = new DynamicNetId<>(AnimationElement.class, elem -> elem.netLink);
+    public static final NetIdSignalK<AnimationElement> ANIMATE_FRAME = ANIMATED.idSignal("animate_frame");
+
+    public static final ParentNetIdSingle<Tf2Player> TF2_PLAYER
+        = new ParentNetIdSingle<Tf2Player>(TF2_GAME, Tf2Player.class, "player", Byte.BYTES) {
             @Override
-            public Tf2Player readContext(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+            public Tf2Player readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 return players[buffer.readByte()];
             }
 
             @Override
-            public void writeContext(ByteBuf buffer, IMsgWriteCtx ctx, Tf2Player value) {
+            public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, Tf2Player value) {
                 buffer.writeByte(Arrays.asList(players).indexOf(value));
             }
         };
+
+    public static final ParentDynamicNetId<Tf2Player, AnimationElement> PLAYER_ANIMATION
+        = new ParentDynamicNetId<>(TF2_PLAYER, "animation", ANIMATED, pl -> pl.animation);
+
     public static final ParentNetIdCast<Tf2Player, Tf2Medic> TF2_MEDIC = TF2_PLAYER.subType(Tf2Medic.class, "medic");
 
     public static final NetIdSignalK<Tf2Player> SPAM_E_KEY = TF2_PLAYER.idSignal("spam_the_e_key");
     public static final NetIdDataK<Tf2Medic> SET_HEAL_TARGET = TF2_MEDIC.idData("set_heal_target");
 
-    public static final ParentNetIdDuel<Tf2Player, Tf2Weapon> PLAYER_WEAPON =
-        new ParentNetIdDuel<Tf2Player, Tf2Weapon>(TF2_PLAYER, "held_weapon", Tf2Weapon.class, Byte.BYTES) {
+    public static final ParentNetIdDuel<Tf2Player, Tf2Weapon> PLAYER_WEAPON
+        = new ParentNetIdDuel<Tf2Player, Tf2Weapon>(TF2_PLAYER, "held_weapon", Tf2Weapon.class, Byte.BYTES) {
             @Override
-            protected void writeContext0(ByteBuf buffer, IMsgWriteCtx ctx, Tf2Weapon weapon) {
+            protected void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, Tf2Weapon weapon) {
                 buffer.writeByte(weapon.holder.weapons.indexOf(weapon));
             }
 
             @Override
-            protected Tf2Weapon readContext(ByteBuf buffer, IMsgReadCtx ctx, Tf2Player player)
+            protected Tf2Weapon readContext(NetByteBuf buffer, IMsgReadCtx ctx, Tf2Player player)
                 throws InvalidInputDataException {
                 int weaponIndex = buffer.readUnsignedByte();
                 return player.weapons.get(weaponIndex);
@@ -108,43 +115,20 @@ public class SimpleNetTester {
             }
         };
 
-    public static final DynamicNetId<AnimationElement> ANIMATED = new DynamicNetId<>(AnimationElement.class,
-        "animation", SimpleNetTester::extractParentData, SimpleNetTester::extractChildData, TF2_PLAYER, PLAYER_WEAPON);
-
-    public static final NetIdSignalK<AnimationElement> ANIMATE_FRAME = ANIMATED.idSignal("animate_frame");
-
-    private static ParentData<?> extractParentData(AnimationElement element) {
-        Object owner = element.owner;
-        if (owner instanceof Tf2Player) {
-            return new ParentData<>(TF2_PLAYER, (Tf2Player) owner);
-        } else if (owner instanceof Tf2Weapon) {
-            return new ParentData<>(PLAYER_WEAPON, (Tf2Weapon) owner);
-        } else {
-            throw new IllegalStateException("Unknown animation owner " + owner);
-        }
-    }
-
-    private static AnimationElement extractChildData(Object object) {
-        if (object instanceof Tf2Player) {
-            return ((Tf2Player) object).animation;
-        } else if (object instanceof Tf2Weapon) {
-            return ((Tf2Weapon) object).animation;
-        } else {
-            throw new IllegalStateException("Unknown animation owner " + object);
-        }
-    }
+    public static final ParentDynamicNetId<Tf2Weapon, AnimationElement> WEAPON_ANIMATION
+        = new ParentDynamicNetId<>(PLAYER_WEAPON, "animation", ANIMATED, w -> w.animation);
 
     public static class AnimationElement {
-        public final Object owner;
+        public final DynamicNetLink<?, AnimationElement> netLink;
         public int frames = 0;
 
-        public AnimationElement(Object owner) {
-            this.owner = owner;
+        public AnimationElement(IDynamicLinkFactory<AnimationElement> netLink) {
+            this.netLink = netLink.create(this);
         }
 
         @Override
         public String toString() {
-            return "Animation " + frames + " in " + owner;
+            return "Animation " + frames + " in " + netLink.parent;
         }
     }
 
@@ -152,7 +136,7 @@ public class SimpleNetTester {
         public final Tf2Player holder;
         public final String name;
         public final int clipSize;
-        public final AnimationElement animation = new AnimationElement(this);
+        public final AnimationElement animation = new AnimationElement(WEAPON_ANIMATION.linkFactory(this));
         public int bullets;
 
         public Tf2Weapon(Tf2Player holder, String name, int clipSize) {
@@ -169,7 +153,7 @@ public class SimpleNetTester {
 
     public static abstract class Tf2Player {
         public final List<Tf2Weapon> weapons = new ArrayList<>();
-        public final AnimationElement animation = new AnimationElement(this);
+        public final AnimationElement animation = new AnimationElement(PLAYER_ANIMATION.linkFactory(this));
 
         @Override
         public String toString() {
@@ -194,13 +178,13 @@ public class SimpleNetTester {
     public static void main(String[] args) throws InvalidInputDataException {
         side1 = new TestConnection(ROOT, 1) {
             @Override
-            public void sendPacket(ByteBuf data, int packetId, NetIdBase netId, int priority) {
+            public void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority) {
                 incomingSide2.add(data.copy());
             }
         };
         side2 = new TestConnection(ROOT, 2) {
             @Override
-            public void sendPacket(ByteBuf data, int packetId, NetIdBase netId, int priority) {
+            public void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority) {
                 incomingSide1.add(data.copy());
             }
         };
@@ -230,7 +214,7 @@ public class SimpleNetTester {
         });
         ANIMATE_FRAME.setReceiver((elem, ctx) -> {
             elem.frames++;
-            System.out.println("Animated a frame of " + elem);
+            // System.out.println("Animated a frame of " + elem);
         });
 
         SIGNAL_PING.send(side1);
@@ -252,19 +236,28 @@ public class SimpleNetTester {
         });
         process();
 
+        players[0] = new Tf2Medic();
+
         SPAM_E_KEY.send(side1, players[0]);
         SET_HEAL_TARGET.send(side1, (Tf2Medic) players[0], (medic, buffer, ctx) -> {
             MsgUtil.writeUTF(buffer, "Scout");
         });
-        ANIMATE_FRAME.send(side1, players[0].animation);
-        ANIMATE_FRAME.send(side1, players[0].weapons.get(0).animation);
-        ANIMATE_FRAME.send(side1, players[0].weapons.get(0).animation);
-        ANIMATE_FRAME.send(side1, players[0].weapons.get(1).animation);
-        ANIMATE_FRAME.send(side1, players[0].animation);
-        ANIMATE_FRAME.send(side1, players[0].weapons.get(0).animation);
-        ANIMATE_FRAME.send(side1, players[0].weapons.get(0).animation);
 
-        process();
+        for (int i = 0; i < 1000; i++) {
+            ANIMATE_FRAME.send(side1, players[0].animation);
+            ANIMATE_FRAME.send(side1, players[0].weapons.get(0).animation);
+            ANIMATE_FRAME.send(side1, players[0].weapons.get(0).animation);
+            ANIMATE_FRAME.send(side1, players[0].weapons.get(1).animation);
+            ANIMATE_FRAME.send(side1, players[0].animation);
+            ANIMATE_FRAME.send(side1, players[0].weapons.get(0).animation);
+            ANIMATE_FRAME.send(side1, players[0].weapons.get(0).animation);
+
+            process();
+        }
+
+        System.out.println(players[0].animation.frames);
+        System.out.println(players[0].weapons.get(0).animation.frames);
+        System.out.println(players[0].weapons.get(1).animation.frames);
     }
 
     private static final String[] SPY_WEAPONS = { //
@@ -287,7 +280,7 @@ public class SimpleNetTester {
         do {
             read1 = false;
             read2 = false;
-            ByteBuf buf;
+            NetByteBuf buf;
             if ((buf = incomingSide1.poll()) != null) {
                 side1.onReceiveRawData(buf);
                 buf.release();

@@ -2,7 +2,6 @@ package alexiil.mc.lib.net;
 
 import java.nio.charset.StandardCharsets;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 public class InternalMsgUtil {
@@ -21,7 +20,7 @@ public class InternalMsgUtil {
     public static final int COUNT_HARDCODED_IDS = 2;
 
     /** @param buffer All of the data for a single packet. It must be complete! */
-    public static void onReceive(ActiveConnection connection, ByteBuf buffer) throws InvalidInputDataException {
+    public static void onReceive(ActiveConnection connection, NetByteBuf buffer) throws InvalidInputDataException {
         int id = buffer.readInt();
         switch (id) {
             case ID_INTERNAL_ALLOCATE_STATIC: {
@@ -55,32 +54,36 @@ public class InternalMsgUtil {
                     p = (ParentNetIdBase) cId;
                 }
                 if (DEBUG) {
-                    LibNetworkStack.LOGGER
-                        .info(connection + " Allocating " + newId + " to " + str + " with parent '" + p.fullName
-                            + "' (flags " + Integer.toBinaryString(flags) + ", len = " + lenToString(len) + ")");
+                    LibNetworkStack.LOGGER.info(
+                        (connection + " Allocating " + newId + " to " + str + " with parent '" + p.fullName + " '")
+                        + ("(flags " + Integer.toBinaryString(flags) + ", len = " + lenToString(len) + ")")
+                    );
                 }
 
                 TreeNetIdBase childId;
                 if (p instanceof ResolvedParentNetId) {
-                    ResolvedParentNetId<?, ?> resolvedParent = (ResolvedParentNetId<?, ?>) p;
-                    TreeNetIdBase child = resolvedParent.dynamicId.children.get(str);
-                    childId = child == null ? null : resolve(child, resolvedParent);
+                    childId = resolveChild((ResolvedParentNetId<?, ?>) p, str);
+                } else if (p instanceof ParentDynamicNetId<?, ?>) {
+                    childId = resolveChild((ParentDynamicNetId<?, ?>) p, str);
+                } else if (p instanceof ResolvedDynamicNetId) {
+                    childId = resolveChild((ResolvedDynamicNetId<?>) p, str);
                 } else {
-                    childId = p.children.get(str);
+                    childId = p.getChild(str);
                 }
                 if (childId == null) {
                     throw new InvalidInputDataException("Unknown child " + str + " of parent " + p.fullName);
                 }
-                if (childId instanceof DynamicNetId) {
-                    childId = resolve((DynamicNetId<?>) childId, p);
-                }
+                // if (childId instanceof DynamicNetId) {
+                // childId = resolve((DynamicNetId<?>) childId, p);
+                // }
                 if (connection.readMapIds.size() != newId) {
                     throw new InvalidInputDataException("Invalid new ID! We must have gotton out of sync somehow...");
                 }
                 connection.readMapIds.add(childId);
                 if (childId.getLengthForPacketAlloc() != len) {
-                    throw new InvalidInputDataException("Mismatched length! We expect "
-                        + lenToString(childId.getLengthForPacketAlloc()) + ", but we received " + lenToString(len));
+                    throw new InvalidInputDataException(
+                        "Mismatched length! We expect " + lenToString(childId.getLengthForPacketAlloc()) + ", but we received " + lenToString(len)
+                    );
                 }
                 break;
             }
@@ -111,7 +114,7 @@ public class InternalMsgUtil {
                 } else {
                     len = 1 + buffer.readUnsignedMedium();
                 }
-                ByteBuf payload = buffer.readBytes(len);
+                NetByteBuf payload = buffer.readBytes(len);
                 MessageContext.Read ctx = new MessageContext.Read(connection, netId);
                 if (!netId.receive(payload, ctx)) {
                     if (DEBUG) {
@@ -124,15 +127,33 @@ public class InternalMsgUtil {
         }
     }
 
-    private static <T> TreeNetIdBase resolve(TreeNetIdBase child, ResolvedParentNetId<?, T> resolvedParent) {
-        NetIdTyped<?> uChild = (NetIdTyped<?>) child;
-        // Check that the types match
-        assert uChild.parent.clazz == resolvedParent.clazz;
-        return new ResolvedNetId<>(resolvedParent, uChild);
+    private static <P, C> ResolvedDynamicNetId<C> resolveChild(ParentDynamicNetId<P, C> parent, String str) {
+        DynamicNetId<C> childId = parent.childId;
+        if (!childId.name.equals(str)) {
+            return null;
+        }
+        return new ResolvedDynamicNetId<>(parent, childId);
     }
 
-    private static <T> TreeNetIdBase resolve(DynamicNetId<T> childId, ParentNetIdBase parent) {
-        return new ResolvedParentNetId<>((ParentNetIdSingle<?>) parent, childId);
+    private static <T> TreeNetIdBase resolveChild(ResolvedParentNetId<?, T> netId, String str) {
+        return resolveChild(netId, netId.reader, str);
+    }
+
+    private static <T> TreeNetIdBase resolveChild(ResolvedDynamicNetId<T> netId, String str) {
+        return resolveChild(netId, netId.wrapped, str);
+    }
+
+    private static <T> TreeNetIdBase resolveChild(ParentNetIdSingle<T> resolved, ParentNetIdSingle<T> wrapped,
+        String str) {
+        ParentNetIdDuel<T, ?> branchId = wrapped.branchChildren.get(str);
+        if (branchId != null) {
+            return new ResolvedParentNetId<>(resolved, branchId);
+        }
+        NetIdTyped<T> leafId = wrapped.leafChildren.get(str);
+        if (leafId != null) {
+            return new ResolvedNetId<>(resolved, leafId);
+        }
+        return null;
     }
 
     private static String lenToString(int len) {
@@ -151,8 +172,8 @@ public class InternalMsgUtil {
      * @param netId The ID to write.
      * @param path The Path to the ID.
      * @param payload The data to write. */
-    public static void send(ActiveConnection connection, NetIdBase netId, NetIdPath path, ByteBuf payload) {
-        ByteBuf fullPayload = send0(connection, netId, path, payload);
+    public static void send(ActiveConnection connection, NetIdBase netId, NetIdPath path, NetByteBuf payload) {
+        NetByteBuf fullPayload = send0(connection, netId, path, payload);
         int id = fullPayload.getInt(0);
         connection.sendPacket(fullPayload, id, netId, netId.getDefaultPriority());
         fullPayload.release();
@@ -165,21 +186,21 @@ public class InternalMsgUtil {
      * @param path The Path to the ID.
      * @param payload The data to write.
      * @param priority The priority level to use. 0 is the maximum. */
-    public static void send(ActiveConnection connection, NetIdBase netId, NetIdPath path, ByteBuf payload,
+    public static void send(ActiveConnection connection, NetIdBase netId, NetIdPath path, NetByteBuf payload,
         int priority) {
-        ByteBuf fullPayload = send0(connection, netId, path, payload);
+        NetByteBuf fullPayload = send0(connection, netId, path, payload);
         int id = fullPayload.getInt(0);
         connection.sendPacket(fullPayload, id, netId, priority);
         fullPayload.release();
     }
 
-    private static ByteBuf send0(ActiveConnection connection, NetIdBase netId, NetIdPath path, ByteBuf payload) {
+    private static NetByteBuf send0(ActiveConnection connection, NetIdBase netId, NetIdPath path, NetByteBuf payload) {
         int id = getWriteId(connection, netId, path);
         int len = 4 + (netId.hasFixedLength() ? 0 : 4) + payload.readableBytes();
         if (netId.hasFixedLength()) {
             assert netId.totalLength == payload.readableBytes();
         }
-        ByteBuf fullPayload = Unpooled.buffer(len);
+        NetByteBuf fullPayload = NetByteBuf.asNetByteBuf(Unpooled.buffer(len));
         fullPayload.writeInt(id);
         if (!netId.hasFixedLength()) {
             if ((netId.getFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_TINY_PACKET) {
@@ -215,15 +236,15 @@ public class InternalMsgUtil {
         int pathLength = path.calculateLength();
         boolean writeLength = netId instanceof NetIdBase && pathLength != TreeNetIdBase.DYNAMIC_LENGTH;
         int len = 0//
-            + 4// Packet ID
-            + 4// Parent ID
-            + 4// Our newly allocated ID (used to ensure that we are still in sync)
-            + 4// Flags
-            + (writeLength ? 3 : 0) // Packet Length
-            + 1// Text bytes length
-            + textData.length;// Text bytes
+        + 4// Packet ID
+        + 4// Parent ID
+        + 4// Our newly allocated ID (used to ensure that we are still in sync)
+        + 4// Flags
+        + (writeLength ? 3 : 0) // Packet Length
+        + 1// Text bytes length
+        + textData.length;// Text bytes
 
-        ByteBuf allocationData = Unpooled.buffer(len);
+        NetByteBuf allocationData = NetByteBuf.asNetByteBuf(Unpooled.buffer(len));
         allocationData.writeInt(ID_INTERNAL_ALLOCATE_STATIC);
         ParentNetIdBase parent = path.array.length > 1 ? (ParentNetIdBase) path.array[path.array.length - 2] : null;
         if (parent == null) {
@@ -236,7 +257,14 @@ public class InternalMsgUtil {
         int newId = connection.writeMapIds.size() + COUNT_HARDCODED_IDS;
         connection.writeMapIds.put(path, newId);
         allocationData.writeInt(newId);
-        allocationData.writeInt(netId.getFlags());
+        int flags = netId.getFlags();
+        allocationData.writeInt(flags);
+        if (((flags & NetIdBase.FLAG_IS_PARENT) == 0)
+        && (((flags & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_FIXED_SIZE) != writeLength)) {
+            throw new IllegalStateException(
+                "The packet " + netId + " has flags of " + flags + " but writeLength of " + writeLength
+            );
+        }
         if (writeLength) {
             allocationData.writeMedium(pathLength);
         }
@@ -244,7 +272,7 @@ public class InternalMsgUtil {
         allocationData.writeBytes(textData);
 
         LibNetworkStack.LOGGER
-            .info(connection + " Sending new ID allocation " + newId + " -> " + netId.getPrintableName() + " " + path);
+            .info(connection + " Sending new ID " + newId + " -> " + netId.getPrintableName() + " " + path);
         connection.sendPacket(allocationData, ID_INTERNAL_ALLOCATE_STATIC, null, NetIdBase.MAXIMUM_PRIORITY);
         allocationData.release();
         return newId;

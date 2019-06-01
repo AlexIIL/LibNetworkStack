@@ -1,7 +1,5 @@
 package alexiil.mc.lib.net;
 
-import io.netty.buffer.ByteBuf;
-
 /** A leaf node that will send and receive messages. */
 public abstract class NetIdBase extends TreeNetIdBase {
 
@@ -77,8 +75,8 @@ public abstract class NetIdBase extends TreeNetIdBase {
     }
 
     /** @return True if the parent element could be found, false if it's null. */
-    public abstract boolean receive(ByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
+    public abstract boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
 
     /* public final void send(ConnectionInfo connection) { } protected abstract void send(ConnectionInfo connection,
-     * ByteBuf buf, IMsgWriteCtx ctx); */
+     * NetByteBuf buf, IMsgWriteCtx ctx); */
 }

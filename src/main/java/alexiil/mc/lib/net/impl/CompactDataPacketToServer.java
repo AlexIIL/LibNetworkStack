@@ -2,13 +2,14 @@ package alexiil.mc.lib.net.impl;
 
 import java.io.IOException;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.util.PacketByteBuf;
+
+import alexiil.mc.lib.net.NetByteBuf;
 
 public class CompactDataPacketToServer implements IPacketCustomId<ServerPlayNetworkHandler> {
 
@@ -43,7 +44,7 @@ public class CompactDataPacketToServer implements IPacketCustomId<ServerPlayNetw
 
     @Override
     public void apply(ServerPlayNetworkHandler netHandler) {
-        ByteBuf buffer = Unpooled.wrappedBuffer(payload);
+        NetByteBuf buffer = NetByteBuf.asNetByteBuf(Unpooled.wrappedBuffer(payload));
         CoreMinecraftNetUtil.onServerReceivePacket((PacketContext) netHandler, buffer);
         buffer.release();
     }

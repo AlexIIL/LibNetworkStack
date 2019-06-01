@@ -3,14 +3,11 @@ package alexiil.mc.lib.net;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
-public class NetIdSignalK<T> extends NetIdTyped<T> {
+public final class NetIdSignalK<T> extends NetIdTyped<T> {
 
     @FunctionalInterface
     public interface IMsgSignalReceiverK<T> {
-        void handle(T obj, IMsgReadCtx ctx);
+        void handle(T obj, IMsgReadCtx ctx) throws InvalidInputDataException;
     }
 
     private IMsgSignalReceiverK<T> receiver;
@@ -25,15 +22,16 @@ public class NetIdSignalK<T> extends NetIdTyped<T> {
     }
 
     @Override
-    protected void receive(ByteBuf buffer, IMsgReadCtx ctx, T obj) {
+    protected void receive(NetByteBuf buffer, IMsgReadCtx ctx, T obj) throws InvalidInputDataException {
         if (receiver != null) {
             receiver.handle(obj, ctx);
         }
     }
 
     /** Sends this signal over the specified connection */
+    @Override
     public void send(ActiveConnection connection, T obj) {
-        ByteBuf buffer = hasFixedLength() ? Unpooled.buffer(totalLength) : Unpooled.buffer();
+        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
         if (parent.pathContainsDynamicParent) {
             List<TreeNetIdBase> nPath = new ArrayList<>();

@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.netty.buffer.ByteBuf;
-
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import alexiil.mc.lib.net.impl.ActiveMinecraftConnection;
@@ -46,9 +44,9 @@ public abstract class ActiveConnection {
      * @param netId The {@link NetIdBase} that is being written out. Will be null if the packet ID is one of the
      *            internal packets.
      * @param priority The priority for the packet. Will be either 0 or a negative number. */
-    public abstract void sendPacket(ByteBuf data, int packetId, NetIdBase netId, int priority);
+    public abstract void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority);
 
-    public void onReceiveRawData(ByteBuf data) throws InvalidInputDataException {
+    public void onReceiveRawData(NetByteBuf data) throws InvalidInputDataException {
         InternalMsgUtil.onReceive(this, data);
     }
 

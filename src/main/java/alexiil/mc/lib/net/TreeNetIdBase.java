@@ -1,8 +1,5 @@
 package alexiil.mc.lib.net;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public abstract class TreeNetIdBase {
 
     public static final int DYNAMIC_LENGTH = -1;
@@ -27,8 +24,6 @@ public abstract class TreeNetIdBase {
 
     public final ParentNetIdBase parent;
 
-    final Map<String, TreeNetIdBase> children = new HashMap<>();
-
     final boolean pathContainsDynamicParent;
     final NetIdPath path;
 
@@ -48,16 +43,22 @@ public abstract class TreeNetIdBase {
         }
         if (totalLength != DYNAMIC_LENGTH) {
             if (totalLength > MAXIMUM_PACKET_LENGTH) {
-                throw new IllegalArgumentException("The length (" + totalLength
-                    + ") exceeded the maximum packet length (" + MAXIMUM_PACKET_LENGTH + ")");
+                throw new IllegalArgumentException(
+                    "The length ("
+                    + totalLength
+                    + ") exceeded the maximum packet length ("
+                    + MAXIMUM_PACKET_LENGTH
+                    + ")"
+                );
             } else if (totalLength < 0) {
-                throw new IllegalArgumentException("The length (" + totalLength
-                    + ") has likely overflowed, exceeded the maximum packet length (" + MAXIMUM_PACKET_LENGTH + ")");
+                throw new IllegalArgumentException(
+                    "The length ("
+                    + totalLength
+                    + ") has likely overflowed, exceeded the maximum packet length ("
+                    + MAXIMUM_PACKET_LENGTH
+                    + ")"
+                );
             }
-        }
-
-        if (parent != null && !(this instanceof ResolvedParentNetId) && !(this instanceof ResolvedNetId)) {
-            ((TreeNetIdBase) parent).addChild(this);
         }
 
         if (parent == null) {
@@ -66,14 +67,6 @@ public abstract class TreeNetIdBase {
         } else {
             path = parent.path.withChild(this);
             pathContainsDynamicParent = parent.pathContainsDynamicParent || this instanceof DynamicNetId;
-        }
-    }
-
-    void addChild(TreeNetIdBase child) {
-        TreeNetIdBase old = children.put(child.name, child);
-        if (old != null) {
-            children.put(child.name, old);
-            throw new IllegalStateException("Non-unique name! Tried to replace " + old + " with " + this);
         }
     }
 

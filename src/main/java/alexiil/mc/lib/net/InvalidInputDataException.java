@@ -1,6 +1,9 @@
 package alexiil.mc.lib.net;
 
-public class InvalidInputDataException extends Exception {
+import java.io.IOException;
+
+public class InvalidInputDataException extends IOException {
+    private static final long serialVersionUID = 1450919830268637665L;
 
     public InvalidInputDataException() {}
 

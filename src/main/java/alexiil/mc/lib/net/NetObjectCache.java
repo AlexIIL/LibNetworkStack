@@ -2,8 +2,6 @@ package alexiil.mc.lib.net;
 
 import javax.annotation.Nullable;
 
-import io.netty.buffer.ByteBuf;
-
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -13,9 +11,9 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 public final class NetObjectCache<T> {
 
     public interface IEntrySerialiser<T> {
-        void write(T obj, ActiveConnection connection, ByteBuf buffer);
+        void write(T obj, ActiveConnection connection, NetByteBuf buffer);
 
-        T read(ActiveConnection connection, ByteBuf buffer);
+        T read(ActiveConnection connection, NetByteBuf buffer);
     }
 
     final class Data {
@@ -42,13 +40,13 @@ public final class NetObjectCache<T> {
         this.netIdRemoveCacheEntry = netIdParent.idData("remove").setReceiver(this::receiveRemoveCacheEntry);
     }
 
-    private void receivePutCacheEntry(ByteBuf buffer, IMsgReadCtx ctx) {
+    private void receivePutCacheEntry(NetByteBuf buffer, IMsgReadCtx ctx) {
         int id = buffer.readInt();
         T obj = serialiser.read(ctx.getConnection(), buffer);
         getData(ctx.getConnection()).idToObj.put(id, obj);
     }
 
-    private void receiveRemoveCacheEntry(ByteBuf buffer, IMsgReadCtx ctx) {
+    private void receiveRemoveCacheEntry(NetByteBuf buffer, IMsgReadCtx ctx) {
 
     }
 

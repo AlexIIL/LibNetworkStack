@@ -1,17 +1,15 @@
 package alexiil.mc.lib.net.impl;
 
-import io.netty.buffer.ByteBuf;
-
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.Packet;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.PacketByteBuf;
 
 import alexiil.mc.lib.net.BufferedConnection;
 import alexiil.mc.lib.net.LibNetworkStack;
 import alexiil.mc.lib.net.McNetworkStack;
+import alexiil.mc.lib.net.NetByteBuf;
 import alexiil.mc.lib.net.NetIdData;
 
 /** A connection to the other side - this is either an {@link ActiveClientConnection} or an
@@ -55,13 +53,13 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     }
 
     @Override
-    public final void sendRawData0(ByteBuf data) {
+    public final void sendRawData0(NetByteBuf data) {
         final Packet<?> packet;
         if (COMPACT_PACKETS && theirCustomId != NET_ID_NOT_OPTIMISED) {
             packet = toCompactPacket(theirCustomId, data);
         } else {
             data.retain();
-            packet = toNormalPacket(new PacketByteBuf(data));
+            packet = toNormalPacket(data);
         }
         sendPacket(packet);
     }
@@ -86,9 +84,9 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
         }
     }
 
-    protected abstract Packet<?> toNormalPacket(PacketByteBuf data);
+    protected abstract Packet<?> toNormalPacket(NetByteBuf data);
 
-    protected abstract Packet<?> toCompactPacket(int receiverId, ByteBuf data);
+    protected abstract Packet<?> toCompactPacket(int receiverId, NetByteBuf data);
 
     protected abstract void sendPacket(Packet<?> packet);
 
