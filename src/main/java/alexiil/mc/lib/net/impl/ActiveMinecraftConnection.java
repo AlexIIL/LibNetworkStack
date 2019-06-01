@@ -2,11 +2,11 @@ package alexiil.mc.lib.net.impl;
 
 import net.fabricmc.fabric.api.network.PacketContext;
 
-import net.minecraft.network.NetworkSide;
 import net.minecraft.network.Packet;
 import net.minecraft.util.Identifier;
 
 import alexiil.mc.lib.net.BufferedConnection;
+import alexiil.mc.lib.net.EnumNetSide;
 import alexiil.mc.lib.net.LibNetworkStack;
 import alexiil.mc.lib.net.McNetworkStack;
 import alexiil.mc.lib.net.NetByteBuf;
@@ -90,5 +90,5 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
 
     protected abstract void sendPacket(Packet<?> packet);
 
-    public abstract NetworkSide getNetSide();
+    public abstract EnumNetSide getNetSide();
 }

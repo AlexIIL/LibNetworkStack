@@ -3,10 +3,10 @@ package alexiil.mc.lib.net.impl;
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.network.NetworkSide;
 import net.minecraft.network.Packet;
 import net.minecraft.server.network.packet.CustomPayloadC2SPacket;
 
+import alexiil.mc.lib.net.EnumNetSide;
 import alexiil.mc.lib.net.NetByteBuf;
 
 public class ActiveClientConnection extends ActiveMinecraftConnection {
@@ -36,7 +36,7 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
     }
 
     @Override
-    public NetworkSide getNetSide() {
-        return NetworkSide.CLIENT;
+    public EnumNetSide getNetSide() {
+        return EnumNetSide.CLIENT;
     }
 }

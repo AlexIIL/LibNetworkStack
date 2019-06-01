@@ -10,7 +10,7 @@ public interface IMsgCtx {
 
     /** @return The {@link NetworkSide} for this {@link #getConnection()}, assuming that it is an
      *         {@link ActiveMinecraftConnection}. */
-    default NetworkSide getNetSide() {
+    default EnumNetSide getNetSide() {
         ActiveConnection connection = getConnection();
         return ((ActiveMinecraftConnection) connection).getNetSide();
     }
@@ -19,14 +19,14 @@ public interface IMsgCtx {
      *         integrated server is the master, and the client is the slave). Assumes that the connection is an
      *         {@link ActiveMinecraftConnection}. */
     default boolean isServerSide() {
-        return getNetSide() == NetworkSide.SERVER;
+        return getNetSide() == EnumNetSide.SERVER;
     }
 
     /** @return true if the code calling this is running as the slave/client. (In normal connections the dedicated or
      *         integrated server is the master, and the client is the slave). Assumes that the connection is an
      *         {@link ActiveMinecraftConnection}. */
     default boolean isClientSide() {
-        return getNetSide() == NetworkSide.CLIENT;
+        return getNetSide() == EnumNetSide.CLIENT;
     }
 
     NetIdBase getNetId();

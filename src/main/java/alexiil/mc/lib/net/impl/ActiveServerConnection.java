@@ -3,11 +3,11 @@ package alexiil.mc.lib.net.impl;
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.client.network.packet.CustomPayloadS2CPacket;
-import net.minecraft.network.NetworkSide;
 import net.minecraft.network.Packet;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import alexiil.mc.lib.net.EnumNetSide;
 import alexiil.mc.lib.net.NetByteBuf;
 
 /** A connection on the server side to a specific {@link ServerPlayerEntity}. */
@@ -38,7 +38,7 @@ public class ActiveServerConnection extends ActiveMinecraftConnection {
     }
 
     @Override
-    public NetworkSide getNetSide() {
-        return NetworkSide.SERVER;
+    public EnumNetSide getNetSide() {
+        return EnumNetSide.SERVER;
     }
 }

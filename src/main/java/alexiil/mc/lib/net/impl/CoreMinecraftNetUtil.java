@@ -107,8 +107,8 @@ public class CoreMinecraftNetUtil {
         ServerStopCallback.EVENT.register(server -> onServerStop());
 
         INetworkStateMixin play = (INetworkStateMixin) NetworkState.PLAY;
-        clientExpectedId = play.libnetworkstack_registerPacket(NetworkSide.CLIENT, CompactDataPacketToClient.class);
-        serverExpectedId = play.libnetworkstack_registerPacket(NetworkSide.SERVER, CompactDataPacketToServer.class);
+        clientExpectedId = play.libnetworkstack_registerPacket(NetworkSide.CLIENTBOUND, CompactDataPacketToClient.class);
+        serverExpectedId = play.libnetworkstack_registerPacket(NetworkSide.SERVERBOUND, CompactDataPacketToServer.class);
     }
 
     static void onClientReceivePacket(PacketContext ctx, NetByteBuf buffer) {
