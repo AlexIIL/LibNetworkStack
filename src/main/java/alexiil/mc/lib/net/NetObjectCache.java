@@ -13,7 +13,7 @@ public final class NetObjectCache<T> {
     public interface IEntrySerialiser<T> {
         void write(T obj, ActiveConnection connection, NetByteBuf buffer);
 
-        T read(ActiveConnection connection, NetByteBuf buffer);
+        T read(ActiveConnection connection, NetByteBuf buffer) throws InvalidInputDataException;
     }
 
     final class Data {
@@ -40,7 +40,7 @@ public final class NetObjectCache<T> {
         this.netIdRemoveCacheEntry = netIdParent.idData("remove").setReceiver(this::receiveRemoveCacheEntry);
     }
 
-    private void receivePutCacheEntry(NetByteBuf buffer, IMsgReadCtx ctx) {
+    private void receivePutCacheEntry(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         int id = buffer.readInt();
         T obj = serialiser.read(ctx.getConnection(), buffer);
         getData(ctx.getConnection()).idToObj.put(id, obj);

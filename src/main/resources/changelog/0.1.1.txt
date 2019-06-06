@@ -1,0 +1,3 @@
+Bug Fixes:
+
+* Added missing "throws InvalidInputDataException" to some net object cache read methods.
