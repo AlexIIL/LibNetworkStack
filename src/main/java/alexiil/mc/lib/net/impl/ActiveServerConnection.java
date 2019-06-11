@@ -41,4 +41,9 @@ public class ActiveServerConnection extends ActiveMinecraftConnection {
     public EnumNetSide getNetSide() {
         return EnumNetSide.SERVER;
     }
+
+    @Override
+    public String toString() {
+        return "{ActiveServerConnection for " + netHandler.player + "}";
+    }
 }

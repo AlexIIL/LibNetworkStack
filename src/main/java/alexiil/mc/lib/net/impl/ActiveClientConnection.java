@@ -2,6 +2,7 @@ package alexiil.mc.lib.net.impl;
 
 import net.fabricmc.fabric.api.network.PacketContext;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.server.network.packet.CustomPayloadC2SPacket;
@@ -38,5 +39,13 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
     @Override
     public EnumNetSide getNetSide() {
         return EnumNetSide.CLIENT;
+    }
+
+    @Override
+    public String toString() {
+        // There's nothing really all that useful to show here - there will normally be only one.
+        String hex = Integer.toHexString(System.identityHashCode(this));
+        String prefix = (MinecraftClient.getInstance().getNetworkHandler() == netHandler) ? "The" : "Other";
+        return "{" + prefix + " ActiveClientConnection@" + hex + "}";
     }
 }

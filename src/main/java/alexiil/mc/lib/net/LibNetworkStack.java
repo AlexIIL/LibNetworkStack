@@ -9,8 +9,7 @@ import alexiil.mc.lib.net.impl.CoreMinecraftNetUtil;
 
 public class LibNetworkStack implements ModInitializer {
 
-    public static final boolean DEBUG = true;
-
+    public static final boolean DEBUG = Boolean.getBoolean("libnetworkstack.debug");
     public static final Logger LOGGER = LogManager.getLogger("LibNetworkStack");
 
     @Override
