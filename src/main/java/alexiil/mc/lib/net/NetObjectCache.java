@@ -1,6 +1,12 @@
 package alexiil.mc.lib.net;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+
 import javax.annotation.Nullable;
+
+import net.minecraft.util.Identifier;
 
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -38,6 +44,43 @@ public final class NetObjectCache<T> {
         this.netIdParent = parent;
         this.netIdPutCacheEntry = netIdParent.idData("put").setReceiver(this::receivePutCacheEntry);
         this.netIdRemoveCacheEntry = netIdParent.idData("remove").setReceiver(this::receiveRemoveCacheEntry);
+    }
+
+    public static <T> NetObjectCache<T> createMappedIdentifier(ParentNetId parent, Function<T, Identifier> nameGetter,
+        Function<Identifier, T> objectGetter) {
+        return new NetObjectCache<>(parent, new Hash.Strategy<T>() {
+            @Override
+            public int hashCode(T o) {
+                return o == null ? 0 : nameGetter.apply(o).hashCode();
+            }
+
+            @Override
+            public boolean equals(T a, T b) {
+                if (a == null || b == null) {
+                    return a == b;
+                }
+                return Objects.equals(nameGetter.apply(a), nameGetter.apply(b));
+            }
+        }, new IEntrySerialiser<T>() {
+            @Override
+            public void write(T obj, ActiveConnection connection, NetByteBuf buffer) {
+                buffer.writeIdentifier(nameGetter.apply(obj));
+            }
+
+            @Override
+            public T read(ActiveConnection connection, NetByteBuf buffer) throws InvalidInputDataException {
+                Identifier id = buffer.readIdentifierSafe();
+                if (id == null) {
+                    return null;
+                }
+                return objectGetter.apply(id);
+            }
+        });
+    }
+
+    public static <T> NetObjectCache<T> createMappedIdentifier(ParentNetId parent, Function<T, Identifier> nameGetter,
+        Map<Identifier, T> map) {
+        return createMappedIdentifier(parent, nameGetter, map::get);
     }
 
     private void receivePutCacheEntry(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
