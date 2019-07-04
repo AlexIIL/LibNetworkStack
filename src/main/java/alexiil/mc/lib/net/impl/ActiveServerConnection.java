@@ -13,6 +13,7 @@ import net.minecraft.client.network.packet.CustomPayloadS2CPacket;
 import net.minecraft.network.Packet;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.SystemUtil;
 
 import alexiil.mc.lib.net.EnumNetSide;
 import alexiil.mc.lib.net.NetByteBuf;
@@ -20,6 +21,8 @@ import alexiil.mc.lib.net.NetByteBuf;
 /** A connection on the server side to a specific {@link ServerPlayerEntity}. */
 public class ActiveServerConnection extends ActiveMinecraftConnection {
     public final ServerPlayNetworkHandler netHandler;
+
+    private long serverTick = Long.MIN_VALUE;
 
     public ActiveServerConnection(ServerPlayNetworkHandler netHandler) {
         // PacketContext is implemented through the mixin MixinServerPlayNetworkHandler
@@ -52,5 +55,32 @@ public class ActiveServerConnection extends ActiveMinecraftConnection {
     @Override
     public String toString() {
         return "{ActiveServerConnection for " + netHandler.player + "}";
+    }
+
+    /** @return The value that the client will use to identify the current server tick. */
+    public long getServerTick() {
+        if (serverTick == Long.MIN_VALUE) {
+            serverTick = 0;
+        }
+        return serverTick;
+    }
+
+    @Override
+    protected void sendTickPacket() {
+        super.sendTickPacket();
+        getServerTick();
+        if (serverTick != Long.MIN_VALUE) {
+            final long sv = serverTick;
+            final long now = SystemUtil.getMeasuringTimeMs();
+            NET_ID_SERVER_TICK.send(this, (buffer, ctx) -> {
+                buffer.writeLong(sv);
+                buffer.writeLong(now);
+            });
+            serverTick++;
+            if (serverTick < 0) {
+                // Overflow, this probably won't end well as we use min_value as the sentinal value.
+                serverTick++;
+            }
+        }
     }
 }

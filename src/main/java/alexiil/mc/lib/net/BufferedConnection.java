@@ -82,11 +82,15 @@ public abstract class BufferedConnection extends ActiveConnection {
         // rather than doing anything more complicated with bandwidth or priorities.
         // at the very least this should be an optimisation over just sending each individual
         // packet out one by one.
+        sendTickPacket();
         flushQueue();
     }
 
+    /** Optional method for subclasses to send additional packet before the queue is flushed. */
+    protected void sendTickPacket() {}
+
     private void flushQueue() {
-        if (packetQueue.isEmpty()) {
+        if (!hasPackets()) {
             return;
         }
         if (packetQueue.size() == 1) {
@@ -104,6 +108,10 @@ public abstract class BufferedConnection extends ActiveConnection {
             combined.release();
         }
         queueLength = 0;
+    }
+
+    protected final boolean hasPackets() {
+        return !packetQueue.isEmpty();
     }
 
     @Override

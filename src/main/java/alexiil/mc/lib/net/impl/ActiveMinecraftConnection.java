@@ -25,6 +25,7 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
 
     // As this is networking we need to ensure that we send as little data as possible
     // Which is why we use the full domain, and a fully descriptive path for it
+    // (What?)
     public static final Identifier PACKET_ID = new Identifier("libnetworkstack", "data");
 
     private static final NetIdData NET_ID_COMPACT_PACKET = //
@@ -39,6 +40,15 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
                 }
             });
 
+    static final NetIdData NET_ID_SERVER_TICK = //
+        McNetworkStack.ROOT.idData("libnetworkstack:server_tick", 16)//
+            .setReceiver((buffer, ctx) -> {
+                ctx.assertClientSide();
+                long tick = buffer.readLong();
+                long sendTime = buffer.readLong();
+                ((ActiveClientConnection) ctx.getConnection()).receiveServerTick(tick, sendTime);
+            });
+
     private static final int NET_ID_NOT_OPTIMISED = 0;
 
     private static final boolean COMPACT_PACKETS = true;
@@ -50,7 +60,7 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     public final PacketContext ctx;
 
     public ActiveMinecraftConnection(PacketContext ctx) {
-        super(McNetworkStack.ROOT, /* Drop after 3 seconds */ 3 * 20);
+        super(McNetworkStack.ROOT, /* Drop after 3 seconds by default */ 3 * 20);
         this.ctx = ctx;
     }
 
@@ -73,11 +83,11 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
 
     @Override
     public void tick() {
-        super.tick();
-        if (COMPACT_PACKETS && !hasSentCustomId) {
+        if (COMPACT_PACKETS && !hasSentCustomId && hasPackets()) {
             hasSentCustomId = true;
             sendCustomId();
         }
+        super.tick();
     }
 
     private void sendCustomId() {

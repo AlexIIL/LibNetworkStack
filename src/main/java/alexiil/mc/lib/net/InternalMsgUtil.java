@@ -63,7 +63,7 @@ public class InternalMsgUtil {
                 if (DEBUG) {
                     LibNetworkStack.LOGGER.info(
                         (connection + " Allocating " + newId + " to " + str + " with parent '" + p.fullName + " '")
-                        + ("(flags " + Integer.toBinaryString(flags) + ", len = " + lenToString(len) + ")")
+                            + ("(flags " + Integer.toBinaryString(flags) + ", len = " + lenToString(len) + ")")
                     );
                 }
 
@@ -89,7 +89,8 @@ public class InternalMsgUtil {
                 connection.readMapIds.add(childId);
                 if (childId.getLengthForPacketAlloc() != len) {
                     throw new InvalidInputDataException(
-                        "Mismatched length! We expect " + lenToString(childId.getLengthForPacketAlloc()) + ", but we received " + lenToString(len)
+                        "Mismatched length! We expect " + lenToString(childId.getLengthForPacketAlloc())
+                            + ", but we received " + lenToString(len)
                     );
                 }
                 break;
@@ -103,7 +104,7 @@ public class InternalMsgUtil {
             }
             default: {
                 if (id < 0 || id >= connection.readMapIds.size()) {
-                    throw new InvalidInputDataException("");
+                    throw new InvalidInputDataException("Unknown/invalid ID " + id);
                 }
                 TreeNetIdBase readId = connection.readMapIds.get(id);
                 if (!(readId instanceof NetIdBase)) {
@@ -125,8 +126,9 @@ public class InternalMsgUtil {
                 MessageContext.Read ctx = new MessageContext.Read(connection, netId);
                 if (!netId.receive(payload, ctx)) {
                     if (DEBUG) {
-                        LibNetworkStack.LOGGER
-                            .info("Dropped " + netId.fullName + " as one of it's parents could not be read!");
+                        LibNetworkStack.LOGGER.info(
+                            "Dropped " + netId.fullName + " as one of it's parents could not be read!"
+                        );
                     }
                 }
                 payload.release();
@@ -243,13 +245,13 @@ public class InternalMsgUtil {
         int pathLength = path.calculateLength();
         boolean writeLength = netId instanceof NetIdBase && pathLength != TreeNetIdBase.DYNAMIC_LENGTH;
         int len = 0//
-        + 4// Packet ID
-        + 4// Parent ID
-        + 4// Our newly allocated ID (used to ensure that we are still in sync)
-        + 4// Flags
-        + (writeLength ? 3 : 0) // Packet Length
-        + 1// Text bytes length
-        + textData.length;// Text bytes
+            + 4// Packet ID
+            + 4// Parent ID
+            + 4// Our newly allocated ID (used to ensure that we are still in sync)
+            + 4// Flags
+            + (writeLength ? 3 : 0) // Packet Length
+            + 1// Text bytes length
+            + textData.length;// Text bytes
 
         NetByteBuf allocationData = NetByteBuf.asNetByteBuf(Unpooled.buffer(len));
         allocationData.writeInt(ID_INTERNAL_ALLOCATE_STATIC);
@@ -266,8 +268,10 @@ public class InternalMsgUtil {
         allocationData.writeInt(newId);
         int flags = netId.getFlags();
         allocationData.writeInt(flags);
-        if (((flags & NetIdBase.FLAG_IS_PARENT) == 0)
-        && (((flags & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_FIXED_SIZE) != writeLength)) {
+        if (
+            ((flags & NetIdBase.FLAG_IS_PARENT) == 0) && (((flags & NetIdBase.PACKET_SIZE_FLAG)
+                == NetIdBase.FLAG_FIXED_SIZE) != writeLength)
+        ) {
             throw new IllegalStateException(
                 "The packet " + netId + " has flags of " + flags + " but writeLength of " + writeLength
             );
@@ -278,8 +282,9 @@ public class InternalMsgUtil {
         allocationData.writeByte(textData.length);
         allocationData.writeBytes(textData);
 
-        LibNetworkStack.LOGGER
-            .info(connection + " Sending new ID " + newId + " -> " + netId.getPrintableName() + " " + path);
+        LibNetworkStack.LOGGER.info(
+            connection + " Sending new ID " + newId + " -> " + netId.getPrintableName() + " " + path
+        );
         connection.sendPacket(allocationData, ID_INTERNAL_ALLOCATE_STATIC, null, NetIdBase.MAXIMUM_PRIORITY);
         allocationData.release();
         return newId;

@@ -9,7 +9,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 archivesBaseName = "LibNetworkStack"
-version = "0.1.1+build.4"
+version = "0.1.1+build.34"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
@@ -80,7 +80,12 @@ publishing {
             version project.version
 
             artifact (jar) {
+                classifier ""
                 builtBy remapJar
+            }
+            pom {
+                developers { developer { id = "AlexIIL" } }
+                dependencies { clear(); }
             }
         }
         publishRemapSrcJar(MavenPublication) {
@@ -91,6 +96,10 @@ publishing {
             artifact (sourcesJar) {
                 classifier "sources"
                 builtBy remapSourcesJar
+            }
+            pom {
+                developers { developer { id = "AlexIIL" } }
+                dependencies { clear(); }
             }
         }
     }
