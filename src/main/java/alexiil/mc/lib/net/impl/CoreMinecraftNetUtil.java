@@ -106,14 +106,10 @@ public class CoreMinecraftNetUtil {
     }
 
     public static void load() {
-        ClientSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
-            onClientReceivePacket(ctx, NetByteBuf.asNetByteBuf(buffer));
-        });
         ServerSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
             onServerReceivePacket(ctx, NetByteBuf.asNetByteBuf(buffer));
         });
 
-        ClientTickCallback.EVENT.register(client -> onClientTick());
         ServerTickCallback.EVENT.register(server -> onServerTick());
         ServerStopCallback.EVENT.register(server -> onServerStop());
 
@@ -124,6 +120,14 @@ public class CoreMinecraftNetUtil {
         serverExpectedId = play.libnetworkstack_registerPacket(
             NetworkSide.SERVERBOUND, CompactDataPacketToServer.class
         );
+    }
+
+    public static void loadClient() {
+        ClientSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
+            onClientReceivePacket(ctx, NetByteBuf.asNetByteBuf(buffer));
+        });
+
+        ClientTickCallback.EVENT.register(client -> onClientTick());
     }
 
     static void onClientReceivePacket(PacketContext ctx, NetByteBuf buffer) {

@@ -337,4 +337,12 @@ public class NetByteBuf extends PacketByteBuf {
             throw new InvalidInputDataException("Invalid Identifier", iee);
         }
     }
+
+    /** Reads a string of up to {@link Short#MAX_VALUE} length.
+     * <p>
+     * NOTE: This is just {@link PacketByteBuf#readString()} but available on the server as well. */
+    @Override
+    public String readString() {
+        return readString(Short.MAX_VALUE);
+    }
 }

@@ -8,6 +8,9 @@
   "entrypoints": {
     "main": [
       "alexiil.mc.lib.net.LibNetworkStack"
+    ],
+    "client": [
+      "alexiil.mc.lib.net.LibNetworkStackClient"
     ]
   },
   "requires": {
