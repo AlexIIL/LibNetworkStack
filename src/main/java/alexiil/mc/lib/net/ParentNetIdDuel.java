@@ -31,14 +31,14 @@ public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
     }
 
     @Override
-    public final void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
+    protected final void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
         Parent p = extractParent(value);
         parent.writeContext(buffer, ctx, p);
         writeContext0(buffer, ctx, value);
     }
 
     @Override
-    public void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
+    protected void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
         Parent p = extractParent(value);
         parent.writeDynamicContext(buffer, ctx, p, resolvedPath);
         writeContext0(buffer, ctx, value);
@@ -50,7 +50,7 @@ public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
     protected abstract void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, T value);
 
     @Override
-    public final T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    protected final T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         Parent p = parent.readContext(buffer, ctx);
         if (p == null) {
             return null;

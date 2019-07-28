@@ -7,6 +7,7 @@
  */
 package alexiil.mc.lib.net;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -87,12 +88,51 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
 
     /** @return The read value, or null if the parent couldn't be read.
      * @throws InvalidInputDataException if the byte buffer contained invalid data. */
-    public abstract T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
+    protected abstract T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
 
-    public abstract void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value);
+    protected abstract void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value);
 
-    public void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
+    protected void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
         writeContext(buffer, ctx, value);
         Collections.addAll(resolvedPath, this.path.array);
+    }
+
+    public final void writeKey(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
+        if (pathContainsDynamicParent) {
+            int wIndex = buffer.writerIndex();
+            buffer.writeInt(0);
+            List<TreeNetIdBase> nPath = new ArrayList<>();
+            writeDynamicContext(buffer, ctx, value, nPath);
+            nPath.add(this);
+            TreeNetIdBase[] array = nPath.toArray(new TreeNetIdBase[0]);
+            NetIdPath resolvedPath = new NetIdPath(array);
+            buffer.setInt(wIndex, InternalMsgUtil.getWriteId(ctx.getConnection(), this, resolvedPath));
+        } else {
+            writeContext(buffer, ctx, value);
+        }
+    }
+
+    public final T readKey(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+        if (!pathContainsDynamicParent) {
+            // Static path
+            return readContext(buffer, ctx);
+        }
+        ActiveConnection connection = ctx.getConnection();
+        int pathId = buffer.readInt();
+        if (pathId < 0 || pathId >= connection.readMapIds.size()) {
+            throw new InvalidInputDataException("Unknown/invalid ID " + pathId);
+        }
+        TreeNetIdBase readId = connection.readMapIds.get(pathId);
+        if (!(readId instanceof ParentNetIdSingle<?>)) {
+            throw new InvalidInputDataException("Not a receiving node: " + readId + " for id " + pathId);
+        }
+        ParentNetIdSingle<?> op = (ParentNetIdSingle<?>) readId;
+        Object read = op.readContext(buffer, ctx);
+        if (!clazz.isInstance(read)) {
+            throw new InvalidInputDataException(
+                "The id sent to us (" + pathId + ") was for a node of a different class! (" + op + ")"
+            );
+        }
+        return clazz.cast(read);
     }
 }

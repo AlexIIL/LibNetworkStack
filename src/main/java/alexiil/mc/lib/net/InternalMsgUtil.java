@@ -227,7 +227,7 @@ public class InternalMsgUtil {
         return fullPayload;
     }
 
-    private static int getWriteId(ActiveConnection connection, TreeNetIdBase netId, NetIdPath path) {
+    static int getWriteId(ActiveConnection connection, TreeNetIdBase netId, NetIdPath path) {
         final int id;
         int currentId = connection.writeMapIds.getInt(path);
         if (currentId == 0) {
