@@ -14,7 +14,6 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 
 import net.minecraft.util.Identifier;
-
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;

@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 import net.fabricmc.fabric.api.network.PacketContext;
-
 import alexiil.mc.lib.net.impl.ActiveMinecraftConnection;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;

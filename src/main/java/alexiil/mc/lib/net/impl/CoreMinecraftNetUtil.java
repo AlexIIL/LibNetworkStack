@@ -206,7 +206,7 @@ public class CoreMinecraftNetUtil {
 
     private static void onClientTick() {
         if (currentClientConnection != null) {
-            if (!currentClientConnection.netHandler.getClientConnection().isOpen()) {
+            if (!currentClientConnection.netHandler.getConnection().isOpen()) {
                 if (DEBUG) {
                     LibNetworkStack.LOGGER.info(
                         "Removed current client connection " + currentClientConnection

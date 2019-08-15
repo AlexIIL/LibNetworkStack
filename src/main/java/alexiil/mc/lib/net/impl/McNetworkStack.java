@@ -128,9 +128,9 @@ public final class McNetworkStack {
                     } else {
                         buffer.writeBoolean(true);
                         Item item_1 = obj.getItem();
-                        buffer.writeVarInt(Item.getRawIdByItem(item_1));
+                        buffer.writeVarInt(Item.getRawId(item_1));
                         CompoundTag tag = null;
-                        if (item_1.canDamage() || item_1.requiresClientSync()) {
+                        if (item_1.isDamageable() || item_1.shouldSyncTagToClient()) {
                             tag = obj.getTag();
                         }
                         buffer.writeCompoundTag(tag);
