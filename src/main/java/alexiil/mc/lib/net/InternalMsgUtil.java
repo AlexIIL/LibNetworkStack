@@ -115,9 +115,9 @@ public class InternalMsgUtil {
                 final int len;
                 if (netId.hasFixedLength()) {
                     len = netId.totalLength;
-                } else if ((netId.getFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_TINY_PACKET) {
+                } else if ((netId.getFinalFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_TINY_PACKET) {
                     len = 1 + buffer.readUnsignedByte();
-                } else if ((netId.getFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_NORMAL_PACKET) {
+                } else if ((netId.getFinalFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_NORMAL_PACKET) {
                     len = 1 + buffer.readUnsignedShort();
                 } else {
                     len = 1 + buffer.readUnsignedMedium();
@@ -212,10 +212,10 @@ public class InternalMsgUtil {
         NetByteBuf fullPayload = NetByteBuf.asNetByteBuf(Unpooled.buffer(len));
         fullPayload.writeInt(id);
         if (!netId.hasFixedLength()) {
-            if ((netId.getFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_TINY_PACKET) {
+            if ((netId.getFinalFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_TINY_PACKET) {
                 assert payload.readableBytes() <= (1 << 8);
                 fullPayload.writeByte(payload.readableBytes() - 1);
-            } else if ((netId.getFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_NORMAL_PACKET) {
+            } else if ((netId.getFinalFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_NORMAL_PACKET) {
                 assert payload.readableBytes() <= (1 << 16);
                 fullPayload.writeShort(payload.readableBytes() - 1);
             } else {
@@ -266,7 +266,7 @@ public class InternalMsgUtil {
         int newId = connection.writeMapIds.size() + COUNT_HARDCODED_IDS;
         connection.writeMapIds.put(path, newId);
         allocationData.writeInt(newId);
-        int flags = netId.getFlags();
+        int flags = netId.getFinalFlags();
         allocationData.writeInt(flags);
         if (
             ((flags & NetIdBase.FLAG_IS_PARENT) == 0) && (((flags & NetIdBase.PACKET_SIZE_FLAG)

@@ -51,7 +51,7 @@ public abstract class ActiveConnection {
      * @param netId The {@link NetIdBase} that is being written out. Will be null if the packet ID is one of the
      *            internal packets.
      * @param priority The priority for the packet. Will be either 0 or a negative number. */
-    public abstract void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority);
+    protected abstract void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority);
 
     public void onReceiveRawData(NetByteBuf data) throws InvalidInputDataException {
         InternalMsgUtil.onReceive(this, data);

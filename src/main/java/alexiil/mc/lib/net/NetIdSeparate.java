@@ -7,6 +7,7 @@
  */
 package alexiil.mc.lib.net;
 
+/** Base class for {@link NetIdData} and {@link NetIdSignal}. */
 public abstract class NetIdSeparate extends NetIdBase {
     NetIdSeparate(ParentNetId parent, String name, int length) {
         super(parent, name, length);

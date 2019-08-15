@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-package alexiil.mc.lib.net;
+package alexiil.mc.lib.net.impl;
 
 import java.util.Objects;
 
@@ -18,13 +18,21 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.math.BlockPos;
 
+import alexiil.mc.lib.net.ActiveConnection;
+import alexiil.mc.lib.net.IMsgReadCtx;
+import alexiil.mc.lib.net.IMsgWriteCtx;
+import alexiil.mc.lib.net.InvalidInputDataException;
+import alexiil.mc.lib.net.NetByteBuf;
+import alexiil.mc.lib.net.NetObjectCache;
 import alexiil.mc.lib.net.NetObjectCache.IEntrySerialiser;
-import alexiil.mc.lib.net.impl.ActiveMinecraftConnection;
+import alexiil.mc.lib.net.ParentNetId;
+import alexiil.mc.lib.net.ParentNetIdSingle;
 
 import it.unimi.dsi.fastutil.Hash;
 
 /** Holder for everything related to a normal minecraft connection. */
-public class McNetworkStack {
+public final class McNetworkStack {
+    private McNetworkStack() {}
 
     /** The root parent - everything must use as it's parent (somewhere up the chain) or it can never be written out to
      * a minecraft connection. */
@@ -87,8 +95,8 @@ public class McNetworkStack {
             }
         };
 
-        CACHE_ITEMS_WITHOUT_AMOUNT =
-            new NetObjectCache<>(ROOT.child("cache_item_stack"), new Hash.Strategy<ItemStack>() {
+        CACHE_ITEMS_WITHOUT_AMOUNT = new NetObjectCache<>(
+            ROOT.child("cache_item_stack"), new Hash.Strategy<ItemStack>() {
 
                 @Override
                 public int hashCode(ItemStack o) {
@@ -140,6 +148,7 @@ public class McNetworkStack {
                         return stack;
                     }
                 }
-            });
+            }
+        );
     }
 }

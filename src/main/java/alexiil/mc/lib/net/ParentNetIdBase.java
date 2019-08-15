@@ -9,6 +9,8 @@ package alexiil.mc.lib.net;
 
 import javax.annotation.Nullable;
 
+/** The base type for all parent nodes - that is nodes used for organising the data that is sent (or for writing header
+ * information), but you can't send or receive data through this. */
 public abstract class ParentNetIdBase extends TreeNetIdBase {
 
     ParentNetIdBase(ParentNetIdBase parent, String name, int thisLength) {
@@ -16,7 +18,7 @@ public abstract class ParentNetIdBase extends TreeNetIdBase {
     }
 
     @Override
-    int getFlags() {
+    int getFinalFlags() {
         return NetIdBase.FLAG_IS_PARENT;
     }
 

@@ -14,8 +14,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+/** A {@link ParentNetIdBase parent node} that writes out the context for the receiver to obtain the same object.
+ * 
+ * @param <T> The type of object that will be written and read. This must not have any generic type parameters itself:
+ *            as it must be representable with a {@link Class}. */
 public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
 
+    /** The type of the object to be written and read. */
     public final Class<T> clazz;
 
     final Map<String, NetIdTyped<T>> leafChildren = new HashMap<>();
@@ -26,6 +31,12 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
         this.clazz = clazz;
     }
 
+    /**
+     * @param parent The parent.
+     * @param clazz The type of the object to be written and read.
+     * @param name The name. (See 
+     * @param thisLength
+     */
     public ParentNetIdSingle(ParentNetId parent, Class<T> clazz, String name, int thisLength) {
         super(parent, name, thisLength);
         this.clazz = clazz;

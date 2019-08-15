@@ -7,6 +7,8 @@
  */
 package alexiil.mc.lib.net;
 
+/** The base class for all networking ID's. Most of the time you should use one of the subclasses: either the parent
+ * node {@link ParentNetIdBase}, or the leaf node {@link NetIdBase}. */
 public abstract class TreeNetIdBase {
 
     public static final int DYNAMIC_LENGTH = -1;
@@ -14,7 +16,7 @@ public abstract class TreeNetIdBase {
     /** Used by {@link InternalMsgUtil} to assert that this is a parent. */
     static final int PARENT_LENGTH = -2;
 
-    public static final int MAXIMUM_PACKET_LENGTH = 0xFF_FF_FF;
+    static final int MAXIMUM_PACKET_LENGTH = 0x1_00_00_00;
 
     /** The name - must be unique to the parent that uses it, so for top level mod packets this MUST include the
      * modid. */
@@ -51,19 +53,13 @@ public abstract class TreeNetIdBase {
         if (totalLength != DYNAMIC_LENGTH) {
             if (totalLength > MAXIMUM_PACKET_LENGTH) {
                 throw new IllegalArgumentException(
-                    "The length ("
-                    + totalLength
-                    + ") exceeded the maximum packet length ("
-                    + MAXIMUM_PACKET_LENGTH
-                    + ")"
+                    "The length (" + totalLength + ") exceeded the maximum packet length (" + MAXIMUM_PACKET_LENGTH
+                        + ")"
                 );
             } else if (totalLength < 0) {
                 throw new IllegalArgumentException(
-                    "The length ("
-                    + totalLength
-                    + ") has likely overflowed, exceeded the maximum packet length ("
-                    + MAXIMUM_PACKET_LENGTH
-                    + ")"
+                    "The length (" + totalLength + ") has likely overflowed, exceeded the maximum packet length ("
+                        + MAXIMUM_PACKET_LENGTH + ")"
                 );
             }
         }
@@ -104,6 +100,8 @@ public abstract class TreeNetIdBase {
         return System.identityHashCode(this);
     }
 
+    /** @return True if the total length of this NetId (the entire path, including it's header) is a fixed length (and
+     *         so the length doesn't need to be written out each time it is sent), or false otherwise. */
     public final boolean hasFixedLength() {
         return totalLength != DYNAMIC_LENGTH;
     }
@@ -112,5 +110,7 @@ public abstract class TreeNetIdBase {
         return this instanceof NetIdBase ? totalLength : PARENT_LENGTH;
     }
 
-    abstract int getFlags();
+    /** @return The set of flags for this net id. Once this method is called it must always return the same value every
+     *         time afterwards! */
+    abstract int getFinalFlags();
 }

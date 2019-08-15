@@ -40,7 +40,7 @@ public final class NetIdData extends NetIdSeparate {
     }
 
     @Override
-    public boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         receiver.receive(buffer, ctx);
         return true;
     }

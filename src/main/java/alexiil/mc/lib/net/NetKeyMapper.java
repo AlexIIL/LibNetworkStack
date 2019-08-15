@@ -70,12 +70,12 @@ public abstract class NetKeyMapper<T> {
 
         @Override
         public E read(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
-            return MsgUtil.readEnum(buffer, clazz);
+            return buffer.readEnumConstant(clazz);
         }
 
         @Override
         public void write(NetByteBuf buffer, IMsgWriteCtx ctx, E value) {
-            MsgUtil.writeEnum(buffer, value);
+            buffer.writeEnumConstant(value);
         }
     }
 }

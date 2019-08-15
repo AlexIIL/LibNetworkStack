@@ -26,7 +26,7 @@ public final class NetIdSignal extends NetIdSeparate {
     }
 
     @Override
-    public boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         if (receiver != null) {
             receiver.handle(ctx);
         }

@@ -15,7 +15,6 @@ import net.minecraft.util.Identifier;
 import alexiil.mc.lib.net.BufferedConnection;
 import alexiil.mc.lib.net.EnumNetSide;
 import alexiil.mc.lib.net.LibNetworkStack;
-import alexiil.mc.lib.net.McNetworkStack;
 import alexiil.mc.lib.net.NetByteBuf;
 import alexiil.mc.lib.net.NetIdData;
 

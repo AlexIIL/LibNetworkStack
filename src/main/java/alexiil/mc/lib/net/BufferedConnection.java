@@ -46,7 +46,7 @@ public abstract class BufferedConnection extends ActiveConnection {
     }
 
     @Override
-    public final void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority) {
+    protected final void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority) {
         if (!ENABLE_QUEUE) {
             sendRawData0(data);
             return;

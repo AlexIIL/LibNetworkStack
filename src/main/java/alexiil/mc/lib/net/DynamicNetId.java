@@ -24,23 +24,23 @@ public final class DynamicNetId<T> extends ParentNetIdSingle<T> {
     }
 
     @Override
-    public T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    protected T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         throw new IllegalStateException("Dynamic Net ID's must be fully resolved before they can be read!");
     }
 
     @Override
-    public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
+    protected void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
         throw new IllegalStateException("Dynamic Net ID's must be written with the dynamic variant!");
     }
 
     @Override
-    public void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
+    protected void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
         writeParent(buffer, ctx, linkGetter.getLink(value), resolvedPath);
         resolvedPath.add(this);
     }
 
-    private <P> void writeParent(NetByteBuf buffer, IMsgWriteCtx ctx, DynamicNetLink<P, T> link,
-        List<TreeNetIdBase> resolvedPath) {
+    private <P> void writeParent(NetByteBuf buffer, IMsgWriteCtx ctx, DynamicNetLink<P, T> link, List<
+        TreeNetIdBase> resolvedPath) {
         assert link.parentId.childId == this;
         link.parentId.parent.writeDynamicContext(buffer, ctx, link.parent, resolvedPath);
         resolvedPath.add(link.parentId);
