@@ -42,7 +42,7 @@
  * <h2>Contextual parent network ID's</h2>
  * <p>
  * In addition to organising all network nodes, any parent type that extends {@link alexiil.mc.lib.net.ParentNetIdSingle
- * ParentNetidSingle} can also write out data for it's represented object. For example you might have a network ID for a
+ * ParentNetIdSingle} can also write out data for it's represented object. For example you might have a network ID for a
  * BlockEntity, and then several children of that block entity that all need to communicate with the same entity on the
  * other side.
  * <p>
