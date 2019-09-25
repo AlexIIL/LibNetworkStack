@@ -21,6 +21,9 @@
     "libnetworkstack.client.json",
     "libnetworkstack.common.json"
   ],
+  "custom": {
+    "modmenu:api": true
+  },
   "icon": "assets/libnetworkstack/icon.png",
   "authors": [ "AlexIIL" ]
 }
