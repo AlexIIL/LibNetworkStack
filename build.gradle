@@ -9,7 +9,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 archivesBaseName = "LibNetworkStack"
-version = "0.1.2+build.6"
+version = "0.1.2+build.7"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
@@ -73,34 +73,17 @@ publishing {
             url System.getenv("MAVEN_DIR") ?: "$projectDir/build/maven"
         }
     }
-    publications {
-       publishRemapJar(MavenPublication) {
-            groupId "alexiil.mc.lib"
-            artifactId "libnetworkstack"
-            version project.version
-
-            artifact (jar) {
-                classifier ""
-                builtBy remapJar
-            }
-            pom {
-                developers { developer { id = "AlexIIL" } }
-                dependencies { clear(); }
-            }
-        }
-        publishRemapSrcJar(MavenPublication) {
-            groupId "alexiil.mc.lib"
-            artifactId "libnetworkstack"
-            version project.version
-
-            artifact (sourcesJar) {
-                classifier "sources"
-                builtBy remapSourcesJar
-            }
-            pom {
-                developers { developer { id = "AlexIIL" } }
-                dependencies { clear(); }
-            }
-        }
-    }
 }
+
+// #####################
+//
+// Extra jar section
+//
+// #####################
+
+apply from: "extra_jar_def.gradle"
+
+ext.mainName = "libnetworkstack"
+ext.mavenGroupId = "alexiil.mc.lib";
+
+generateJar("base", ["**"], [], true);

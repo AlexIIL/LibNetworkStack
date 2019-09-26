@@ -25,5 +25,6 @@
     "modmenu:api": true
   },
   "icon": "assets/libnetworkstack/icon.png",
-  "authors": [ "AlexIIL" ]
+  "authors": [ "AlexIIL" ],
+  "__buildscript_diff": { "base": {} }
 }
