@@ -282,9 +282,11 @@ public class InternalMsgUtil {
         allocationData.writeByte(textData.length);
         allocationData.writeBytes(textData);
 
-        LibNetworkStack.LOGGER.info(
-            connection + " Sending new ID " + newId + " -> " + netId.getPrintableName() + " " + path
-        );
+        if (LibNetworkStack.DEBUG) {
+            LibNetworkStack.LOGGER.info(
+                connection + " Sending new ID " + newId + " -> " + netId.getPrintableName() + " " + path
+            );
+        }
         connection.sendPacket(allocationData, ID_INTERNAL_ALLOCATE_STATIC, null, NetIdBase.MAXIMUM_PRIORITY);
         allocationData.release();
         return newId;
