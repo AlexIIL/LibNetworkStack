@@ -63,7 +63,6 @@ public class NetworkStateMixin implements INetworkStateMixin {
         at = @At("HEAD"),
         method = "getPacketId(Lnet/minecraft/network/NetworkSide;Lnet/minecraft/network/Packet;)Ljava/lang/Integer;",
         cancellable = true)
-    @Unique
     private void getPacketId(NetworkSide side, Packet<?> pkt, CallbackInfoReturnable<Integer> ci) throws Exception {
         if (pkt instanceof IPacketCustomId) {
             ci.setReturnValue(((IPacketCustomId<?>) pkt).getReadId());

@@ -9,7 +9,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 archivesBaseName = "LibNetworkStack"
-version = "0.1.2+build.7"
+version = "0.1.2+build.8"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
@@ -30,19 +30,6 @@ dependencies {
     // Misc
     compile "com.google.code.findbugs:jsr305:3.0.1"
     testCompile "junit:junit:4.12"
-}
-
-processResources {
-    inputs.property "version", project.version
-
-    from(sourceSets.main.resources.srcDirs) {
-        include "fabric.mod.json"
-        expand "version": project.version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude "fabric.mod.json"
-    }
 }
 
 compileJava {
