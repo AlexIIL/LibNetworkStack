@@ -113,7 +113,7 @@ public abstract class NetIdBase extends TreeNetIdBase {
         this.maximumDropDelay = Math.min(0, dropDelay);
     }
 
-    protected void changeFlag(int newFlags) {
+    protected final void changeFlag(int newFlags) {
         if (flagsUsed) {
             throw new IllegalStateException("You cannot modify the flags of this NetId as it has already been used!");
         }
@@ -121,7 +121,7 @@ public abstract class NetIdBase extends TreeNetIdBase {
     }
 
     @Override
-    int getFinalFlags() {
+    final int getFinalFlags() {
         flagsUsed = true;
         return flags;
     }

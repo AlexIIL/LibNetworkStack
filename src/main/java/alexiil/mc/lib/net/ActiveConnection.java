@@ -58,6 +58,6 @@ public abstract class ActiveConnection {
 
     <T> NetObjectCache<T>.Data getCacheData(NetObjectCache<T> cache) {
         // Nothing we can do about this warning without storing it directly in the cache
-        return (NetObjectCache<T>.Data) caches.computeIfAbsent(cache, c -> c.new Data());
+        return (NetObjectCache<T>.Data) caches.computeIfAbsent(cache, c -> c.new Data(this));
     }
 }

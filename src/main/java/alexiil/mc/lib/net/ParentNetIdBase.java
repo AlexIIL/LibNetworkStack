@@ -18,7 +18,7 @@ public abstract class ParentNetIdBase extends TreeNetIdBase {
     }
 
     @Override
-    int getFinalFlags() {
+    final int getFinalFlags() {
         return NetIdBase.FLAG_IS_PARENT;
     }
 

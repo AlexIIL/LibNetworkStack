@@ -14,6 +14,7 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 
 import net.minecraft.util.Identifier;
+
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -21,6 +22,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntLinkedOpenCustomHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 public final class NetObjectCache<T> {
+
+    static final boolean DEBUG = LibNetworkStack.DEBUG || Boolean.getBoolean("libnetworkstack.cache.debug");
 
     public interface IEntrySerialiser<T> {
         void write(T obj, ActiveConnection connection, NetByteBuf buffer);
@@ -33,7 +36,10 @@ public final class NetObjectCache<T> {
         final Int2ObjectMap<T> idToObj = new Int2ObjectOpenHashMap<>();
         final Object2IntMap<T> objToId = new Object2IntLinkedOpenCustomHashMap<>(equality);
 
-        public Data() {
+        Data(ActiveConnection connection) {
+            if (DEBUG) {
+                LibNetworkStack.LOGGER.info("[cache] " + connection + " " + netIdParent + " Created a new cache.");
+            }
             objToId.defaultReturnValue(-1);
         }
     }
@@ -50,6 +56,12 @@ public final class NetObjectCache<T> {
         this.netIdParent = parent;
         this.netIdPutCacheEntry = netIdParent.idData("put").setReceiver(this::receivePutCacheEntry);
         this.netIdRemoveCacheEntry = netIdParent.idData("remove").setReceiver(this::receiveRemoveCacheEntry);
+    }
+
+    /** @see NetIdBase#notBuffered() */
+    public void notBuffered() {
+        netIdPutCacheEntry.notBuffered();
+        netIdRemoveCacheEntry.notBuffered();
     }
 
     public static <T> NetObjectCache<T> createMappedIdentifier(ParentNetId parent, Function<T, Identifier> nameGetter,
@@ -92,6 +104,11 @@ public final class NetObjectCache<T> {
     private void receivePutCacheEntry(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         int id = buffer.readInt();
         T obj = serialiser.read(ctx.getConnection(), buffer);
+        if (DEBUG) {
+            LibNetworkStack.LOGGER.info(
+                "[cache] " + ctx.getConnection() + " " + netIdParent + " Read new ID " + id + " for object " + obj
+            );
+        }
         getData(ctx.getConnection()).idToObj.put(id, obj);
     }
 
@@ -110,6 +127,11 @@ public final class NetObjectCache<T> {
             id = data.objToId.size();
             data.objToId.put(obj, id);
             final int i = id;
+            if (DEBUG) {
+                LibNetworkStack.LOGGER.info(
+                    "[cache] " + connection + " " + netIdParent + " Sending new ID " + i + " for object " + obj
+                );
+            }
             netIdPutCacheEntry.send(connection, (buffer, ctx) -> {
                 buffer.writeInt(i);
                 serialiser.write(obj, connection, buffer);
@@ -120,6 +142,10 @@ public final class NetObjectCache<T> {
 
     @Nullable
     public T getObj(ActiveConnection connection, int id) {
-        return getData(connection).idToObj.get(id);
+        NetObjectCache<T>.Data data = getData(connection);
+        if (DEBUG && !data.idToObj.containsKey(id)) {
+            LibNetworkStack.LOGGER.info("[cache] " + connection + " " + netIdParent + " Unknown ID " + id + "!");
+        }
+        return data.idToObj.get(id);
     }
 }
