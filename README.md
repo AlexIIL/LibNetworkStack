@@ -29,6 +29,18 @@ For example if you wanted to send data from your custom BlockEntity called "Elec
 
 ```java
 
+import alexiil.mc.lib.net.ActiveConnection;
+import alexiil.mc.lib.net.IMsgReadCtx;
+import alexiil.mc.lib.net.IMsgWriteCtx;
+import alexiil.mc.lib.net.InvalidInputDataException;
+import alexiil.mc.lib.net.NetByteBuf;
+import alexiil.mc.lib.net.NetIdDataK;
+import alexiil.mc.lib.net.NetIdDataK.IMsgDataWriterK;
+import alexiil.mc.lib.net.NetIdSignalK;
+import alexiil.mc.lib.net.ParentNetIdSingle;
+import alexiil.mc.lib.net.impl.CoreMinecraftNetUtil;
+import alexiil.mc.lib.net.impl.McNetworkStack;
+
 public class ElectricFurnaceBlockEntity extends BlockEntity {
     // All base code left out
     public static final ParentNetIdSingle<ElectricFurnaceBlockEntity> NET_PARENT;
