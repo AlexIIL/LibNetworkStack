@@ -16,6 +16,8 @@ import java.util.Random;
 
 import net.fabricmc.fabric.api.network.PacketContext;
 
+import net.minecraft.block.entity.BlockEntity;
+
 import alexiil.mc.lib.net.ActiveConnection;
 import alexiil.mc.lib.net.DynamicNetId;
 import alexiil.mc.lib.net.DynamicNetLink;
@@ -28,6 +30,7 @@ import alexiil.mc.lib.net.NetByteBuf;
 import alexiil.mc.lib.net.NetIdBase;
 import alexiil.mc.lib.net.NetIdData;
 import alexiil.mc.lib.net.NetIdDataK;
+import alexiil.mc.lib.net.NetIdDataK.IMsgDataWriterK;
 import alexiil.mc.lib.net.NetIdSignal;
 import alexiil.mc.lib.net.NetIdSignalK;
 import alexiil.mc.lib.net.ParentDynamicNetId;
@@ -35,6 +38,8 @@ import alexiil.mc.lib.net.ParentNetId;
 import alexiil.mc.lib.net.ParentNetIdCast;
 import alexiil.mc.lib.net.ParentNetIdDuel;
 import alexiil.mc.lib.net.ParentNetIdSingle;
+import alexiil.mc.lib.net.impl.CoreMinecraftNetUtil;
+import alexiil.mc.lib.net.impl.McNetworkStack;
 
 public class SimpleNetTester {
 
@@ -77,53 +82,58 @@ public class SimpleNetTester {
 
     public static Tf2Player[] players = new Tf2Player[1];
 
-    public static final DynamicNetId<AnimationElement> ANIMATED
-        = new DynamicNetId<>(AnimationElement.class, elem -> elem.netLink);
+    public static final DynamicNetId<AnimationElement> ANIMATED = new DynamicNetId<>(
+        AnimationElement.class, elem -> elem.netLink
+    );
     public static final NetIdSignalK<AnimationElement> ANIMATE_FRAME = ANIMATED.idSignal("animate_frame");
 
-    public static final ParentNetIdSingle<Tf2Player> TF2_PLAYER
-        = new ParentNetIdSingle<Tf2Player>(TF2_GAME, Tf2Player.class, "player", Byte.BYTES) {
-            @Override
-            public Tf2Player readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
-                return players[buffer.readByte()];
-            }
+    public static final ParentNetIdSingle<Tf2Player> TF2_PLAYER = new ParentNetIdSingle<Tf2Player>(
+        TF2_GAME, Tf2Player.class, "player", Byte.BYTES
+    ) {
+        @Override
+        public Tf2Player readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+            return players[buffer.readByte()];
+        }
 
-            @Override
-            public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, Tf2Player value) {
-                buffer.writeByte(Arrays.asList(players).indexOf(value));
-            }
-        };
+        @Override
+        public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, Tf2Player value) {
+            buffer.writeByte(Arrays.asList(players).indexOf(value));
+        }
+    };
 
-    public static final ParentDynamicNetId<Tf2Player, AnimationElement> PLAYER_ANIMATION
-        = new ParentDynamicNetId<>(TF2_PLAYER, "animation", ANIMATED, pl -> pl.animation);
+    public static final ParentDynamicNetId<Tf2Player, AnimationElement> PLAYER_ANIMATION = new ParentDynamicNetId<>(
+        TF2_PLAYER, "animation", ANIMATED, pl -> pl.animation
+    );
 
     public static final ParentNetIdCast<Tf2Player, Tf2Medic> TF2_MEDIC = TF2_PLAYER.subType(Tf2Medic.class, "medic");
 
     public static final NetIdSignalK<Tf2Player> SPAM_E_KEY = TF2_PLAYER.idSignal("spam_the_e_key");
     public static final NetIdDataK<Tf2Medic> SET_HEAL_TARGET = TF2_MEDIC.idData("set_heal_target");
 
-    public static final ParentNetIdDuel<Tf2Player, Tf2Weapon> PLAYER_WEAPON
-        = new ParentNetIdDuel<Tf2Player, Tf2Weapon>(TF2_PLAYER, "held_weapon", Tf2Weapon.class, Byte.BYTES) {
-            @Override
-            protected void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, Tf2Weapon weapon) {
-                buffer.writeByte(weapon.holder.weapons.indexOf(weapon));
-            }
+    public static final ParentNetIdDuel<Tf2Player, Tf2Weapon> PLAYER_WEAPON = new ParentNetIdDuel<Tf2Player, Tf2Weapon>(
+        TF2_PLAYER, "held_weapon", Tf2Weapon.class, Byte.BYTES
+    ) {
+        @Override
+        protected void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, Tf2Weapon weapon) {
+            buffer.writeByte(weapon.holder.weapons.indexOf(weapon));
+        }
 
-            @Override
-            protected Tf2Weapon readContext(NetByteBuf buffer, IMsgReadCtx ctx, Tf2Player player)
-                throws InvalidInputDataException {
-                int weaponIndex = buffer.readUnsignedByte();
-                return player.weapons.get(weaponIndex);
-            }
+        @Override
+        protected Tf2Weapon readContext(NetByteBuf buffer, IMsgReadCtx ctx, Tf2Player player)
+            throws InvalidInputDataException {
+            int weaponIndex = buffer.readUnsignedByte();
+            return player.weapons.get(weaponIndex);
+        }
 
-            @Override
-            protected Tf2Player extractParent(Tf2Weapon weapon) {
-                return weapon.holder;
-            }
-        };
+        @Override
+        protected Tf2Player extractParent(Tf2Weapon weapon) {
+            return weapon.holder;
+        }
+    };
 
-    public static final ParentDynamicNetId<Tf2Weapon, AnimationElement> WEAPON_ANIMATION
-        = new ParentDynamicNetId<>(PLAYER_WEAPON, "animation", ANIMATED, w -> w.animation);
+    public static final ParentDynamicNetId<Tf2Weapon, AnimationElement> WEAPON_ANIMATION = new ParentDynamicNetId<>(
+        PLAYER_WEAPON, "animation", ANIMATED, w -> w.animation
+    );
 
     public static class AnimationElement {
         public final DynamicNetLink<?, AnimationElement> netLink;
@@ -299,5 +309,80 @@ public class SimpleNetTester {
                 read2 = true;
             }
         } while (read1 | read2);
+    }
+
+    // The example from the README.md (approx)
+    public static class ElectricFurnaceBlockEntity extends BlockEntity {
+
+        public static final ParentNetIdSingle<ElectricFurnaceBlockEntity> NET_PARENT;
+        public static final NetIdDataK<ElectricFurnaceBlockEntity> ID_CHANGE_BRIGHTNESS;
+        public static final NetIdSignalK<ElectricFurnaceBlockEntity> ID_TURN_ON, ID_TURN_OFF;
+
+        static {
+            NET_PARENT = McNetworkStack.BLOCK_ENTITY.subType(
+                ElectricFurnaceBlockEntity.class, "electrical_nightmare:electric_furnace"
+            );
+            ID_CHANGE_BRIGHTNESS = NET_PARENT.idData("CHANGE_BRIGHTNESS").setReceiver(
+                ElectricFurnaceBlockEntity::receiveBrightnessChange
+            );
+            ID_TURN_ON = NET_PARENT.idSignal("TURN_ON").setReceiver(ElectricFurnaceBlockEntity::receiveTurnOn);
+            ID_TURN_OFF = NET_PARENT.idSignal("TURN_OFF").setReceiver(ElectricFurnaceBlockEntity::receiveTurnOff);
+        }
+
+        /** Used for rendering - somehow. */
+        public int clientBrightness;
+        public boolean clientIsOn;
+
+        public ElectricFurnaceBlockEntity() {
+            super(null);
+        }
+
+        /** Sends the new brightness, to be rendered on the front of the block.
+         * 
+         * @param newBrightness A value between 0 and 255. */
+        protected final void sendBrightnessChange(int newBrightness) {
+            for (ActiveConnection connection : CoreMinecraftNetUtil.getPlayersWatching(getWorld(), getPos())) {
+                ID_CHANGE_BRIGHTNESS.send(connection, this, new IMsgDataWriterK<ElectricFurnaceBlockEntity>() {
+
+                    // In your own code you probably want to change this to a lambda
+                    // but the full types are used here for clarity.
+
+                    @Override
+                    public void write(ElectricFurnaceBlockEntity be, NetByteBuf buf, IMsgWriteCtx ctx) {
+                        ctx.assertServerSide();
+
+                        buf.writeByte(newBrightness);
+                    }
+                });
+            }
+        }
+
+        /** Sends the new on/off state, to be rendered on the front of the block. */
+        protected final void sendSwitchState(boolean isOn) {
+            for (ActiveConnection connection : CoreMinecraftNetUtil.getPlayersWatching(getWorld(), getPos())) {
+                (isOn ? ID_TURN_ON : ID_TURN_OFF).send(connection, this);
+            }
+        }
+
+        protected void receiveBrightnessChange(NetByteBuf buf, IMsgReadCtx ctx) throws InvalidInputDataException {
+            // Ensure that this was sent by the server, to the client (and that we are on the client side)
+            ctx.assertClientSide();
+
+            this.clientBrightness = buf.readUnsignedByte();
+        }
+
+        protected void receiveTurnOn(IMsgReadCtx ctx) throws InvalidInputDataException {
+            // Ensure that this was sent by the server, to the client (and that we are on the client side)
+            ctx.assertClientSide();
+
+            this.clientIsOn = true;
+        }
+
+        protected void receiveTurnOff(IMsgReadCtx ctx) throws InvalidInputDataException {
+            // Ensure that this was sent by the server, to the client (and that we are on the client side)
+            ctx.assertClientSide();
+
+            this.clientIsOn = false;
+        }
     }
 }
