@@ -37,8 +37,11 @@ public class ElectricFurnaceBlockEntity extends BlockEntity {
 
     static {
         NET_PARENT = McNetworkStack.BLOCK_ENTITY.subType(
+            // Assuming the modid is "electrical_nightmare"
             ElectricFurnaceBlockEntity.class, "electrical_nightmare:electric_furnace"
         );
+        // We don't need to re-specify the modid for this because the parent already did
+        // and we don't expect any other mods to add new id's.
         ID_CHANGE_BRIGHTNESS = NET_PARENT.idData("CHANGE_BRIGHTNESS").setReceiver(
             ElectricFurnaceBlockEntity::receiveBrightnessChange
         );
@@ -55,6 +58,7 @@ public class ElectricFurnaceBlockEntity extends BlockEntity {
     }
 
     /** Sends the new brightness, to be rendered on the front of the block.
+     *  This should be called on the server side.
      * 
      * @param newBrightness A value between 0 and 255. */
     protected final void sendBrightnessChange(int newBrightness) {
@@ -74,7 +78,8 @@ public class ElectricFurnaceBlockEntity extends BlockEntity {
         }
     }
 
-    /** Sends the new on/off state, to be rendered on the front of the block. */
+    /** Sends the new on/off state, to be rendered on the front of the block.
+     *  This should be called on the server side. */
     protected final void sendSwitchState(boolean isOn) {
         for (ActiveConnection connection : CoreMinecraftNetUtil.getPlayersWatching(getWorld(), getPos())) {
             (isOn ? ID_TURN_ON : ID_TURN_OFF).send(connection, this);
