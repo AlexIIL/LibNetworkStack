@@ -8,11 +8,10 @@
 package alexiil.mc.lib.net.mixin.impl;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import alexiil.mc.lib.net.mixin.api.IPacketHandlerMixin;
 
-import org.apache.logging.log4j.LogManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -36,26 +35,14 @@ public class NetworkStateMixin implements INetworkStateMixin {
 
     @Final
     @Shadow
-    private Map<NetworkSide, BiMap<Integer, Class<? extends Packet<?>>>> packetHandlers;
+    private Map<NetworkSide, ? extends IPacketHandlerMixin> packetHandlers;
 
     @Override
-    public int libnetworkstack_registerPacket(NetworkSide recvSide, Class<? extends IPacketCustomId<?>> clazz) {
-        BiMap<Integer, Class<? extends Packet<?>>> biMap = packetHandlerMap.get(recvSide);
-        if (biMap == null) {
-            biMap = HashBiMap.create();
-            packetHandlerMap.put(recvSide, biMap);
-        }
-
-        if (biMap.containsValue(clazz)) {
-            String string_1 = recvSide + " packet " + clazz + " is already known to ID " + biMap.inverse().get(clazz);
-            LogManager.getLogger().fatal(string_1);
-            throw new IllegalArgumentException(string_1);
-        } else {
-            int index = biMap.size();
-            biMap.put(index, clazz);
-            HANDLER_STATE_MAP.put(clazz, (NetworkState) (Object) this);
-            return index;
-        }
+    public <P extends IPacketCustomId<?>> int libnetworkstack_registerPacket(NetworkSide recvSide, Class<P> klass, Supplier<P> factory) {
+        IPacketHandlerMixin mapping = packetHandlers.get(recvSide);
+        int id = mapping.libnetworkstack_register(klass, factory);
+        HANDLER_STATE_MAP.put(klass, (NetworkState) (Object) this);
+        return id;
     }
 
     @Inject(

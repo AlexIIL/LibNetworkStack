@@ -9,10 +9,8 @@ package alexiil.mc.lib.net.mixin.api;
 
 import java.util.function.Supplier;
 
-import net.minecraft.network.NetworkSide;
+import net.minecraft.network.Packet;
 
-import alexiil.mc.lib.net.impl.IPacketCustomId;
-
-public interface INetworkStateMixin {
-    <P extends IPacketCustomId<?>> int libnetworkstack_registerPacket(NetworkSide recvSide, Class<P> klass, Supplier<P> factory);
+public interface IPacketHandlerMixin {
+    int libnetworkstack_register(Class<? extends Packet<?>> klass, Supplier<? extends Packet<?>> factory);
 }

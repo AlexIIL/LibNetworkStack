@@ -95,8 +95,8 @@ public class CoreMinecraftNetUtil {
         if (player instanceof ServerPlayerEntity) {
             return getServerConnection((PacketContext) ((ServerPlayerEntity) player).networkHandler);
         } else if (player.world.isClient
-            && (currentClientConnection == null && player == MinecraftClient.getInstance().player)
-            || (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player)) {
+            && ((currentClientConnection == null && player == MinecraftClient.getInstance().player)
+            || (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player))) {
                 return getOrCreateClientConnection((PacketContext) MinecraftClient.getInstance().player.networkHandler);
             } else {
                 throw new IllegalArgumentException("Unknown PlayerEntity " + player.getClass());
@@ -112,10 +112,12 @@ public class CoreMinecraftNetUtil {
         ServerStopCallback.EVENT.register(server -> onServerStop());
 
         INetworkStateMixin play = (INetworkStateMixin) (Object) NetworkState.PLAY;
-        clientExpectedId
-            = play.libnetworkstack_registerPacket(NetworkSide.CLIENTBOUND, CompactDataPacketToClient.class);
-        serverExpectedId
-            = play.libnetworkstack_registerPacket(NetworkSide.SERVERBOUND, CompactDataPacketToServer.class);
+        clientExpectedId = play.libnetworkstack_registerPacket(
+            NetworkSide.CLIENTBOUND, CompactDataPacketToClient.class, CompactDataPacketToClient::new
+        );
+        serverExpectedId = play.libnetworkstack_registerPacket(
+            NetworkSide.SERVERBOUND, CompactDataPacketToServer.class, CompactDataPacketToServer::new
+        );
     }
 
     public static void loadClient() {
@@ -129,10 +131,9 @@ public class CoreMinecraftNetUtil {
     static void onClientReceivePacket(PacketContext ctx, NetByteBuf buffer) {
         ActiveClientConnection connection = getOrCreateClientConnection(ctx);
         NetByteBuf b = buffer.copy();
-        ActiveClientConnection c = connection;
         ctx.getTaskQueue().execute(() -> {
             try {
-                c.onReceiveRawData(b);
+                connection.onReceiveRawData(b);
             } catch (InvalidInputDataException e) {
                 e.printStackTrace();
             }
