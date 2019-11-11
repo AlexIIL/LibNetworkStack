@@ -20,4 +20,14 @@ public interface IMsgReadCtx extends IMsgCtx {
             throw new InvalidInputDataException("Cannot read " + getNetId() + " on the client!");
         }
     }
+
+    /** Informs the supplier that this packet has been dropped (for any reason) and so there might be unread data left
+     * in the buffer. */
+    default void drop() {
+        drop("");
+    }
+
+    /** Informs the supplier that this packet has been dropped (for the given reason) and so there might be unread data
+     * left in the buffer. */
+    void drop(String reason);
 }

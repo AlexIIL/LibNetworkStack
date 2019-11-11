@@ -28,8 +28,20 @@ public abstract class MessageContext implements IMsgCtx {
     }
 
     public static class Read extends MessageContext implements IMsgReadCtx {
+
+        /** A non-null value indicates that the read message was dropped. */
+        public String dropReason;
+
         public Read(ActiveConnection connection, NetIdBase id) {
             super(connection, id);
+        }
+
+        @Override
+        public void drop(String reason) {
+            if (reason == null) {
+                reason = "";
+            }
+            dropReason = reason;
         }
     }
 

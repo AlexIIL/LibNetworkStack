@@ -1,0 +1,7 @@
+Changes:
+
+* Added MsgUtil.ensureEmpty, which is now called after every
+    packet is received (provided it isn't dropped).
+* Added IMsgReadCtx.drop, which will log a message in debug mode,
+    and also prevent the message supplier from ensuring that the
+    buffer has been fully read.

@@ -104,7 +104,7 @@ public class InternalMsgUtil {
             }
             default: {
                 if (id < 0 || id >= connection.readMapIds.size()) {
-                    throw new InvalidInputDataException("Unknown/invalid ID " + id);
+                    throw new InvalidInputDataException(connection + " Unknown/invalid ID " + id);
                 }
                 TreeNetIdBase readId = connection.readMapIds.get(id);
                 if (!(readId instanceof NetIdBase)) {
@@ -124,10 +124,22 @@ public class InternalMsgUtil {
                 }
                 NetByteBuf payload = buffer.readBytes(len);
                 MessageContext.Read ctx = new MessageContext.Read(connection, netId);
-                if (!netId.receive(payload, ctx)) {
+                if (netId.receive(payload, ctx)) {
+                    if (ctx.dropReason == null) {
+                        if (payload.readableBytes() > 0) {
+                            MsgUtil.ensureEmpty(payload, DEBUG, connection + " " + netId.fullName);
+                        }
+                    } else {
+                        if (DEBUG) {
+                            LibNetworkStack.LOGGER.info(
+                                connection + " Dropped " + netId.fullName + " because '" + ctx.dropReason + "'!"
+                            );
+                        }
+                    }
+                } else {
                     if (DEBUG) {
                         LibNetworkStack.LOGGER.info(
-                            "Dropped " + netId.fullName + " as one of it's parents could not be read!"
+                            connection + " Dropped " + netId.fullName + " as one of it's parents could not be read!"
                         );
                     }
                 }

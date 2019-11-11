@@ -21,7 +21,7 @@ dependencies {
 
 ## Getting Started
 
-You can either look at the [wiki](https://github.com/AlexIIL/LibNetworkStack/wiki) for a brief overview, or look at [SimplePipes](https://github.com/AlexIIL/SimplePipes) source code for the tank or facades for examples on how to register and use multiparts. (To get help you can either open an issue here, or ping AlexIIL on the fabric or CottonMC discord servers).
+You can either look at the [wiki](https://github.com/AlexIIL/LibNetworkStack/wiki) for a brief overview, or look at [SimplePipes](https://github.com/AlexIIL/SimplePipes) source code for a use-case mod that uses this. To get help you can either open an issue here, or ping AlexIIL on the fabric or CottonMC discord servers.
 
 ## A simple example
 
@@ -102,8 +102,8 @@ public class ElectricFurnaceBlockEntity extends BlockEntity {
         // Ensure that this was sent by the server, to the client (and that we are on the client side)
         ctx.assertClientSide();
 
-         this.clientBrightness = buf.readUnsignedByte();
-     }
+        this.clientBrightness = buf.readUnsignedByte();
+    }
 
     protected void receiveTurnOn(IMsgReadCtx ctx) throws InvalidInputDataException {
         // Ensure that this was sent by the server, to the client (and that we are on the client side)
