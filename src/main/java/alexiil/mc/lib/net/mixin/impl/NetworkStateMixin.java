@@ -16,7 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -37,7 +36,7 @@ public class NetworkStateMixin implements INetworkStateMixin {
 
     @Final
     @Shadow
-    private Map<NetworkSide, BiMap<Integer, Class<? extends Packet<?>>>> packetHandlerMap;
+    private Map<NetworkSide, BiMap<Integer, Class<? extends Packet<?>>>> packetHandlers;
 
     @Override
     public int libnetworkstack_registerPacket(NetworkSide recvSide, Class<? extends IPacketCustomId<?>> clazz) {
@@ -62,7 +61,8 @@ public class NetworkStateMixin implements INetworkStateMixin {
     @Inject(
         at = @At("HEAD"),
         method = "getPacketId(Lnet/minecraft/network/NetworkSide;Lnet/minecraft/network/Packet;)Ljava/lang/Integer;",
-        cancellable = true)
+        cancellable = true
+    )
     private void getPacketId(NetworkSide side, Packet<?> pkt, CallbackInfoReturnable<Integer> ci) throws Exception {
         if (pkt instanceof IPacketCustomId) {
             ci.setReturnValue(((IPacketCustomId<?>) pkt).getReadId());

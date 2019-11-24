@@ -14,7 +14,7 @@ import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.network.Packet;
 import net.minecraft.server.network.packet.CustomPayloadC2SPacket;
-import net.minecraft.util.SystemUtil;
+import net.minecraft.util.Util;
 
 import alexiil.mc.lib.net.EnumNetSide;
 import alexiil.mc.lib.net.NetByteBuf;
@@ -78,7 +78,7 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
 
     void receiveServerTick(long tick, long sendTime) {
         if (lastClientMs == Long.MIN_VALUE) {
-            lastClientMs = SystemUtil.getMeasuringTimeMs();
+            lastClientMs = Util.getMeasuringTimeMs();
         }
 
         prevServerTick = currentServerTick;
@@ -109,18 +109,18 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
 
         double divisor = DATAPOINT_SATURATION_COUNT;
 
-        averageSendTimeDelta = (averageSendTimeDelta * datapointCount + currentServerSendTime - prevServerSendTime)
-            / divisor;
+        averageSendTimeDelta
+            = (averageSendTimeDelta * datapointCount + currentServerSendTime - prevServerSendTime) / divisor;
 
-        averageReceiveTimeDelta = (averageReceiveTimeDelta * datapointCount + currentServerReceiveTime
-            - prevServerReceiveTime) / divisor;
+        averageReceiveTimeDelta
+            = (averageReceiveTimeDelta * datapointCount + currentServerReceiveTime - prevServerReceiveTime) / divisor;
     }
 
     /** Called by {@link MinecraftClientMixin} (<strong>ONLY</strong>) when minecraft increases it's
      * {@link MinecraftClient#getTickDelta()} value. Used internally o update the values returned by
      * {@link #getSmoothedServerTickValue()} and {@link #getSmoothedServerTickDelta()}.
      * 
-     * @param milliseconds The value of {@link SystemUtil#getMeasuringTimeMs()} that was passed into
+     * @param milliseconds The value of {@link Util#getMeasuringTimeMs()} that was passed into
      *            {@link RenderTickCounter#beginRenderTick(long)}. */
     public void onIncrementMinecraftTickCounter(long milliseconds) {
         if (datapointCount <= 0) {

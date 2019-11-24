@@ -285,7 +285,7 @@ public class NetByteBuf extends PacketByteBuf {
             "Tried to write an enum value without any values! How did you do this?"
         );
         if (possible.length == 1) return this;
-        writeFixedBits(value.ordinal(), MathHelper.log2DeBrujin(possible.length));
+        writeFixedBits(value.ordinal(), MathHelper.log2DeBruijn(possible.length));
         return this;
     }
 
@@ -298,7 +298,7 @@ public class NetByteBuf extends PacketByteBuf {
             "Tried to read an enum value without any values! How did you do this?"
         );
         if (enums.length == 1) return enums[0];
-        int length = MathHelper.log2DeBrujin(enums.length);
+        int length = MathHelper.log2DeBruijn(enums.length);
         int index = readFixedBits(length);
         return enums[index];
     }

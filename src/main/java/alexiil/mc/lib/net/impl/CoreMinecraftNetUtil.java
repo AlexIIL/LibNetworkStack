@@ -66,9 +66,8 @@ public class CoreMinecraftNetUtil {
             if (currentClientConnection == null) {
                 return list;
             }
-            if (
-                currentClientConnection.getMinecraftContext().getPlayer().squaredDistanceTo(beX, beY, beZ) < distanceSq
-            ) {
+            if (currentClientConnection.getMinecraftContext().getPlayer().squaredDistanceTo(beX, beY, beZ)
+                < distanceSq) {
                 list.add(currentClientConnection);
             }
         } else {
@@ -95,14 +94,13 @@ public class CoreMinecraftNetUtil {
         }
         if (player instanceof ServerPlayerEntity) {
             return getServerConnection((PacketContext) ((ServerPlayerEntity) player).networkHandler);
-        } else if (
-            player.world.isClient && (currentClientConnection == null && player == MinecraftClient.getInstance().player)
-                || (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player)
-        ) {
-            return getOrCreateClientConnection((PacketContext) MinecraftClient.getInstance().player.networkHandler);
-        } else {
-            throw new IllegalArgumentException("Unknown PlayerEntity " + player.getClass());
-        }
+        } else if (player.world.isClient
+            && (currentClientConnection == null && player == MinecraftClient.getInstance().player)
+            || (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player)) {
+                return getOrCreateClientConnection((PacketContext) MinecraftClient.getInstance().player.networkHandler);
+            } else {
+                throw new IllegalArgumentException("Unknown PlayerEntity " + player.getClass());
+            }
     }
 
     public static void load() {
@@ -113,13 +111,11 @@ public class CoreMinecraftNetUtil {
         ServerTickCallback.EVENT.register(server -> onServerTick());
         ServerStopCallback.EVENT.register(server -> onServerStop());
 
-        INetworkStateMixin play = (INetworkStateMixin) NetworkState.PLAY;
-        clientExpectedId = play.libnetworkstack_registerPacket(
-            NetworkSide.CLIENTBOUND, CompactDataPacketToClient.class
-        );
-        serverExpectedId = play.libnetworkstack_registerPacket(
-            NetworkSide.SERVERBOUND, CompactDataPacketToServer.class
-        );
+        INetworkStateMixin play = (INetworkStateMixin) (Object) NetworkState.PLAY;
+        clientExpectedId
+            = play.libnetworkstack_registerPacket(NetworkSide.CLIENTBOUND, CompactDataPacketToClient.class);
+        serverExpectedId
+            = play.libnetworkstack_registerPacket(NetworkSide.SERVERBOUND, CompactDataPacketToServer.class);
     }
 
     public static void loadClient() {
@@ -227,9 +223,8 @@ public class CoreMinecraftNetUtil {
             if (!connection.netHandler.client.isOpen()) {
                 iterator.remove();
                 if (DEBUG) {
-                    LibNetworkStack.LOGGER.info(
-                        "Removed server connection " + connection + " as it's channel is no longer open."
-                    );
+                    LibNetworkStack.LOGGER
+                        .info("Removed server connection " + connection + " as it's channel is no longer open.");
                 }
                 continue;
             }
