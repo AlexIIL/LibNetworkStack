@@ -1,7 +1,10 @@
 Changes:
 
 * Added MsgUtil.ensureEmpty, which is now called after every
-    packet is received (provided it isn't dropped).
+  packet is received (provided it isn't dropped).
+  * If the packet hasn't been fully read then this will throw
+    an exception if debugging is enabled, or log an error if not.
 * Added IMsgReadCtx.drop, which will log a message in debug mode,
-    and also prevent the message supplier from ensuring that the
-    buffer has been fully read.
+  and also prevent the message supplier from ensuring that the
+  buffer has been fully read.
+* Improved debug messages a tiny bit.
