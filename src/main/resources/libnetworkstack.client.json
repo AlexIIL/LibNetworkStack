@@ -2,7 +2,7 @@
   "required": true,
   "package": "alexiil.mc.lib.net.mixin.impl",
   "compatibilityLevel": "JAVA_8",
-  "mixins": [
+  "client": [
     "MinecraftClientMixin",
     "RenderTickCounterMixin"
   ],

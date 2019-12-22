@@ -1,0 +1,5 @@
+Changes:
+
+* Ported to minecraft 1.15.1 (mostly thanks to laura for the port).
+* Added overrides in NetByteBuf.(read/write)Var(Int/Long) that handle
+  negative numbers correctly. (So -7 will write out 1 byte rather than 5).

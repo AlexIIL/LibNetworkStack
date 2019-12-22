@@ -281,9 +281,9 @@ public class NetByteBuf extends PacketByteBuf {
     public NetByteBuf writeEnumConstant(Enum<?> value) {
         Enum<?>[] possible = value.getDeclaringClass().getEnumConstants();
         if (possible == null) throw new IllegalArgumentException("Not an enum " + value.getClass());
-        if (possible.length == 0) throw new IllegalArgumentException(
-            "Tried to write an enum value without any values! How did you do this?"
-        );
+        if (possible.length == 0) {
+            throw new IllegalArgumentException("Tried to write an enum value without any values! How did you do this?");
+        }
         if (possible.length == 1) return this;
         writeFixedBits(value.ordinal(), MathHelper.log2DeBruijn(possible.length));
         return this;
@@ -293,11 +293,15 @@ public class NetByteBuf extends PacketByteBuf {
     public <E extends Enum<E>> E readEnumConstant(Class<E> enumClass) {
         // No need to lookup the declaring class as you cannot refer to sub-classes of Enum.
         E[] enums = enumClass.getEnumConstants();
-        if (enums == null) throw new IllegalArgumentException("Not an enum " + enumClass);
-        if (enums.length == 0) throw new IllegalArgumentException(
-            "Tried to read an enum value without any values! How did you do this?"
-        );
-        if (enums.length == 1) return enums[0];
+        if (enums == null) {
+            throw new IllegalArgumentException("Not an enum " + enumClass);
+        }
+        if (enums.length == 0) {
+            throw new IllegalArgumentException("Tried to read an enum value without any values! How did you do this?");
+        }
+        if (enums.length == 1) {
+            return enums[0];
+        }
         int length = MathHelper.log2DeBruijn(enums.length);
         int index = readFixedBits(length);
         return enums[index];
@@ -314,6 +318,99 @@ public class NetByteBuf extends PacketByteBuf {
     @Override
     public BlockPos readBlockPos() {
         return new BlockPos(readVarInt(), readVarInt(), readVarInt());
+    }
+
+    @Override
+    public NetByteBuf writeVarInt(int ival) {
+        // 32 bits
+        // svvvVVV VVVV
+        // where:
+        // s = sign
+        // v = bit
+        // V = nibble
+        // 0 = unused bit
+        // # = unused nibble
+
+        final int sign;
+        if (ival < 0) {
+            ival = ~ival;
+            sign = 1;
+        } else {
+            sign = 0;
+        }
+
+        // Now write the remaining bits out:
+        // Either:
+        // 1 byte: s000# ## ## 00vvV -> 0svvV
+        // 2 bytes: s000# ## 000vV VV -> 1vvvV 0svvV
+        // 3 bytes: s00 VV VV -> 1vvvV 1vvvV 0svvV
+        // 4 bytes: s000 0vvv VV VV VV -> 1vvvV 1vvvV 1vvvV 0svvV
+        // 5 bytes: svvvV VV VV VV -> 1vvvV 1vvvV 1vvvV 1vvvV 0s0vV
+
+        while ((ival & ~0x3f) != 0) {
+            writeByte(0x80 | (ival & 0x7f));
+            ival >>>= 7;
+        }
+        writeByte((sign << 6) | ival);
+        return this;
+    }
+
+    @Override
+    public int readVarInt() {
+        int count = 0;
+        int ival = 0;
+        int read;
+        do {
+            read = readUnsignedByte();
+            if ((read & 0x80) == 0) {
+                ival |= (read & 0x3f) << count++ * 7;
+                if ((read & 0x40) == 0) {
+                    return ival;
+                } else {
+                    return ~ival;
+                }
+            }
+            ival |= (read & 0x7f) << count++ * 7;
+        } while (count < 5);
+        return ival;
+    }
+
+    @Override
+    public NetByteBuf writeVarLong(long lval) {
+        // Copy-pasted from writeVarInt
+        final int sign;
+        if (lval < 0) {
+            lval = ~lval;
+            sign = 1;
+        } else {
+            sign = 0;
+        }
+        while ((lval & ~0x3f) != 0) {
+            writeByte((int) (0x80 | (lval & 0x7f)));
+            lval >>>= 7;
+        }
+        writeByte((int) ((sign << 6) | lval));
+        return this;
+    }
+
+    @Override
+    public long readVarLong() {
+        int count = 0;
+        long lval = 0;
+        long read;
+        do {
+            read = readUnsignedByte();
+            if ((read & 0x80) == 0) {
+                lval |= (read & 0x3f) << count++ * 7;
+                if ((read & 0x40) == 0) {
+                    return lval;
+                } else {
+                    return ~lval;
+                }
+            }
+            lval |= (read & 0x7f) << count++ * 7;
+        } while (count < 10);
+        return lval;
     }
 
     @Override
