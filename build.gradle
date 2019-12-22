@@ -9,7 +9,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 archivesBaseName = "LibNetworkStack"
-version = "0.3.0"
+version = "0.3.2"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
