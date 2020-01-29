@@ -56,6 +56,7 @@ public final class NetIdDataK<T> extends NetIdTyped<T> {
     public void send(ActiveConnection connection, T obj, IMsgDataWriterK<T> writer) {
         NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
+        validateSendingSide(ctx);
         final NetIdPath resolvedPath;
         if (parent.pathContainsDynamicParent) {
             List<TreeNetIdBase> nPath = new ArrayList<>();
@@ -74,5 +75,47 @@ public final class NetIdDataK<T> extends NetIdTyped<T> {
             InternalMsgUtil.send(connection, this, resolvedPath, buffer);
         }
         buffer.release();
+    }
+
+    @Override
+    public NetIdDataK<T> withoutBuffering() {
+        notBuffered();
+        return this;
+    }
+
+    @Override
+    public NetIdDataK<T> withTinySize() {
+        setTinySize();
+        return this;
+    }
+
+    @Override
+    public NetIdDataK<T> withNormalSize() {
+        setNormalSize();
+        return this;
+    }
+
+    @Override
+    public NetIdDataK<T> withLargeSize() {
+        setLargeSize();
+        return this;
+    }
+
+    @Override
+    public NetIdDataK<T> toClientOnly() {
+        _toClientOnly();
+        return this;
+    }
+
+    @Override
+    public NetIdDataK<T> toServerOnly() {
+        _toServerOnly();
+        return this;
+    }
+
+    @Override
+    public NetIdDataK<T> toEitherSide() {
+        _toEitherSide();
+        return this;
     }
 }

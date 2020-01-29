@@ -1,0 +1,11 @@
+Changes:
+
+* Updated to minecraft 1.15.2.
+* Added NetIdBase.withTinySize, withNormalSize, withLargeSize, withoutBuffering
+    * These are equivalent to setTinySize (etc) but return the NetIdBase object itself.
+* Implemented NetIdBase.notBuffered() - now it actually does something!
+    * Also allowed the buffering flag to be changed at any time - as it doesn't need to
+      be stable over time.
+* Added NetIdBase.toClientOnly, toServerOnly, and toEitherSide:
+    * These check to see if they are being sent from the correct side when sending them
+      and check when they are received.

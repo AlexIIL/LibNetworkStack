@@ -10,6 +10,8 @@ package alexiil.mc.lib.net;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
+import javax.annotation.Nullable;
+
 public abstract class BufferedConnection extends ActiveConnection {
 
     /** The minimum accepted value for {@link #ourMaxBandwidth} and {@link #theirMaxBandwidth}, in bytes per second. */
@@ -46,7 +48,7 @@ public abstract class BufferedConnection extends ActiveConnection {
     }
 
     @Override
-    protected final void sendPacket(NetByteBuf data, int packetId, NetIdBase netId, int priority) {
+    protected final void sendPacket(NetByteBuf data, int packetId, @Nullable NetIdBase netId, int priority) {
         if (!ENABLE_QUEUE) {
             sendRawData0(data);
             return;
@@ -63,6 +65,10 @@ public abstract class BufferedConnection extends ActiveConnection {
             packetQueue.add(new BufferedPacketInfo(data, priority));
             queueLength += rb;
             data.retain();
+
+            if (netId != null && (netId.getFinalFlags() & NetIdBase.FLAG_NOT_BUFFERED) != 0) {
+                flushQueue();
+            }
         }
     }
 

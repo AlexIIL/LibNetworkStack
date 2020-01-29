@@ -60,6 +60,7 @@ public class InternalMsgUtil {
                     }
                     p = (ParentNetIdBase) cId;
                 }
+
                 if (DEBUG) {
                     LibNetworkStack.LOGGER.info(
                         (connection + " Allocating " + newId + " to " + str + " with parent '" + p.fullName + " '")
@@ -89,8 +90,7 @@ public class InternalMsgUtil {
                 connection.readMapIds.add(childId);
                 if (childId.getLengthForPacketAlloc() != len) {
                     throw new InvalidInputDataException(
-                        "Mismatched length! We expect " + lenToString(childId.getLengthForPacketAlloc())
-                            + ", but we received " + lenToString(len)
+                        "Mismatched length! We expect " + lenToString(childId.getLengthForPacketAlloc()) + ", but we received " + lenToString(len)
                     );
                 }
                 break;
@@ -112,18 +112,27 @@ public class InternalMsgUtil {
                 }
                 NetIdBase netId = (NetIdBase) readId;
 
+                int flags = netId.getFinalFlags();
+
+                MessageContext.Read ctx = new MessageContext.Read(connection, netId);
+                if ((flags & NetIdBase.FLAGS_SIDED) == NetIdBase.FLAG_SIDED_RECV_ON_CLIENT) {
+                    ctx.assertClientSide();
+                } else if ((flags & NetIdBase.FLAGS_SIDED) == NetIdBase.FLAG_SIDED_RECV_ON_SERVER) {
+                    ctx.assertServerSide();
+                }
+
                 final int len;
                 if (netId.hasFixedLength()) {
                     len = netId.totalLength;
-                } else if ((netId.getFinalFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_TINY_PACKET) {
+                } else if ((flags & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_TINY_PACKET) {
                     len = 1 + buffer.readUnsignedByte();
-                } else if ((netId.getFinalFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_NORMAL_PACKET) {
+                } else if ((flags & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_NORMAL_PACKET) {
                     len = 1 + buffer.readUnsignedShort();
                 } else {
                     len = 1 + buffer.readUnsignedMedium();
                 }
                 NetByteBuf payload = buffer.readBytes(len);
-                MessageContext.Read ctx = new MessageContext.Read(connection, netId);
+
                 if (netId.receive(payload, ctx)) {
                     if (ctx.dropReason == null) {
                         if (payload.readableBytes() > 0) {
@@ -131,9 +140,8 @@ public class InternalMsgUtil {
                         }
                     } else {
                         if (DEBUG) {
-                            LibNetworkStack.LOGGER.info(
-                                connection + " Dropped " + netId.fullName + " because '" + ctx.dropReason + "'!"
-                            );
+                            LibNetworkStack.LOGGER
+                                .info(connection + " Dropped " + netId.fullName + " because '" + ctx.dropReason + "'!");
                         }
                     }
                 } else {
@@ -164,8 +172,9 @@ public class InternalMsgUtil {
         return resolveChild(netId, netId.wrapped, str);
     }
 
-    private static <T> TreeNetIdBase resolveChild(ParentNetIdSingle<T> resolved, ParentNetIdSingle<T> wrapped,
-        String str) {
+    private static <T> TreeNetIdBase resolveChild(
+        ParentNetIdSingle<T> resolved, ParentNetIdSingle<T> wrapped, String str
+    ) {
         ParentNetIdDuel<T, ?> branchId = wrapped.branchChildren.get(str);
         if (branchId != null) {
             return new ResolvedParentNetId<>(resolved, branchId);
@@ -207,8 +216,9 @@ public class InternalMsgUtil {
      * @param path The Path to the ID.
      * @param payload The data to write.
      * @param priority The priority level to use. 0 is the maximum. */
-    public static void send(ActiveConnection connection, NetIdBase netId, NetIdPath path, NetByteBuf payload,
-        int priority) {
+    public static void send(
+        ActiveConnection connection, NetIdBase netId, NetIdPath path, NetByteBuf payload, int priority
+    ) {
         NetByteBuf fullPayload = send0(connection, netId, path, payload);
         int id = fullPayload.getInt(0);
         connection.sendPacket(fullPayload, id, netId, priority);
@@ -280,13 +290,12 @@ public class InternalMsgUtil {
         allocationData.writeInt(newId);
         int flags = netId.getFinalFlags();
         allocationData.writeInt(flags);
-        if (
-            ((flags & NetIdBase.FLAG_IS_PARENT) == 0) && (((flags & NetIdBase.PACKET_SIZE_FLAG)
-                == NetIdBase.FLAG_FIXED_SIZE) != writeLength)
-        ) {
-            throw new IllegalStateException(
-                "The packet " + netId + " has flags of " + flags + " but writeLength of " + writeLength
-            );
+        if ((flags & NetIdBase.FLAG_IS_PARENT) == 0) {
+            if (((flags & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_FIXED_SIZE) != writeLength) {
+                throw new IllegalStateException(
+                    "The packet " + netId + " has flags of " + flags + " but writeLength of " + writeLength
+                );
+            }
         }
         if (writeLength) {
             allocationData.writeMedium(pathLength);
@@ -295,9 +304,8 @@ public class InternalMsgUtil {
         allocationData.writeBytes(textData);
 
         if (LibNetworkStack.DEBUG) {
-            LibNetworkStack.LOGGER.info(
-                connection + " Sending new ID " + newId + " -> " + netId.getPrintableName() + " " + path
-            );
+            LibNetworkStack.LOGGER
+                .info(connection + " Sending new ID " + newId + " -> " + netId.getPrintableName() + " " + path);
         }
         connection.sendPacket(allocationData, ID_INTERNAL_ALLOCATE_STATIC, null, NetIdBase.MAXIMUM_PRIORITY);
         allocationData.release();

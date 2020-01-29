@@ -58,16 +58,15 @@ public class CoreMinecraftNetUtil {
         if (w == null) {
             return list;
         }
-        double distanceSq = distance * distance;
-        double beX = be.getPos().getX() + 0.5;
-        double beY = be.getPos().getY() + 0.5;
-        double beZ = be.getPos().getZ() + 0.5;
         if (w.isClient) {
             if (currentClientConnection == null) {
                 return list;
             }
-            if (currentClientConnection.getMinecraftContext().getPlayer().squaredDistanceTo(beX, beY, beZ)
-                < distanceSq) {
+            double distanceSq = distance * distance;
+            double x = be.getPos().getX() + 0.5;
+            double y = be.getPos().getY() + 0.5;
+            double z = be.getPos().getZ() + 0.5;
+            if (currentClientConnection.getMinecraftContext().getPlayer().squaredDistanceTo(x, y, z) < distanceSq) {
                 list.add(currentClientConnection);
             }
         } else {
@@ -94,13 +93,23 @@ public class CoreMinecraftNetUtil {
         }
         if (player instanceof ServerPlayerEntity) {
             return getServerConnection((PacketContext) ((ServerPlayerEntity) player).networkHandler);
-        } else if (player.world.isClient
-            && ((currentClientConnection == null && player == MinecraftClient.getInstance().player)
-            || (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player))) {
-                return getOrCreateClientConnection((PacketContext) MinecraftClient.getInstance().player.networkHandler);
+        } else if (player.world.isClient) {
+            ClientPlayerEntity clientPlayer = MinecraftClient.getInstance().player;
+            if (clientPlayer == null) {
+                throw new IllegalStateException(
+                    "Cannot create a connection for " + player + " because they cannot be the client player (null)!"
+                );
+            }
+            if (currentClientConnection == null && player == clientPlayer) {
+                return getOrCreateClientConnection((PacketContext) clientPlayer.networkHandler);
+            } else if (currentClientConnection != null && currentClientConnection.ctx.getPlayer() == player) {
+                return currentClientConnection;
             } else {
                 throw new IllegalArgumentException("Unknown PlayerEntity " + player.getClass());
             }
+        } else {
+            throw new IllegalArgumentException("Unknown PlayerEntity " + player.getClass());
+        }
     }
 
     public static void load() {

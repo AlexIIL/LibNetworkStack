@@ -35,11 +35,54 @@ public final class NetIdSignalK<T> extends NetIdTyped<T> {
         }
     }
 
+    @Override
+    public NetIdSignalK<T> withoutBuffering() {
+        notBuffered();
+        return this;
+    }
+
+    @Override
+    public NetIdSignalK<T> withTinySize() {
+        setTinySize();
+        return this;
+    }
+
+    @Override
+    public NetIdSignalK<T> withNormalSize() {
+        setNormalSize();
+        return this;
+    }
+
+    @Override
+    public NetIdSignalK<T> withLargeSize() {
+        setLargeSize();
+        return this;
+    }
+
+    @Override
+    public NetIdSignalK<T> toClientOnly() {
+        _toClientOnly();
+        return this;
+    }
+
+    @Override
+    public NetIdSignalK<T> toServerOnly() {
+        _toServerOnly();
+        return this;
+    }
+
+    @Override
+    public NetIdSignalK<T> toEitherSide() {
+        _toEitherSide();
+        return this;
+    }
+
     /** Sends this signal over the specified connection */
     @Override
     public void send(ActiveConnection connection, T obj) {
         NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
+        validateSendingSide(ctx);
         if (parent.pathContainsDynamicParent) {
             List<TreeNetIdBase> nPath = new ArrayList<>();
             parent.writeDynamicContext(buffer, ctx, obj, nPath);

@@ -25,6 +25,14 @@ public final class NetIdSignal extends NetIdSeparate {
         return this;
     }
 
+    /** Sends this signal over the specified connection */
+    public void send(ActiveConnection connection) {
+        validateSendingSide(connection);
+        InternalMsgUtil.send(connection, this, path, NetByteBuf.EMPTY_BUFFER);
+    }
+
+    // Internals
+
     @Override
     boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         if (receiver != null) {
@@ -33,8 +41,45 @@ public final class NetIdSignal extends NetIdSeparate {
         return true;
     }
 
-    /** Sends this signal over the specified connection */
-    public void send(ActiveConnection connection) {
-        InternalMsgUtil.send(connection, this, path, NetByteBuf.EMPTY_BUFFER);
+    @Override
+    public NetIdSignal withoutBuffering() {
+        notBuffered();
+        return this;
+    }
+
+    @Override
+    public NetIdSignal withTinySize() {
+        setTinySize();
+        return this;
+    }
+
+    @Override
+    public NetIdSignal withNormalSize() {
+        setNormalSize();
+        return this;
+    }
+
+    @Override
+    public NetIdSignal withLargeSize() {
+        setLargeSize();
+        return this;
+    }
+
+    @Override
+    public NetIdSignal toClientOnly() {
+        _toClientOnly();
+        return this;
+    }
+
+    @Override
+    public NetIdSignal toServerOnly() {
+        _toServerOnly();
+        return this;
+    }
+
+    @Override
+    public NetIdSignal toEitherSide() {
+        _toEitherSide();
+        return this;
     }
 }

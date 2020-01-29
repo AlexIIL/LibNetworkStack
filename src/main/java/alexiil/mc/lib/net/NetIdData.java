@@ -53,11 +53,54 @@ public final class NetIdData extends NetIdSeparate {
     public void send(ActiveConnection connection, IMsgDataWriter writer) {
         NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
+        validateSendingSide(ctx);
         writer.write(buffer, ctx);
         if (buffer.readableBytes() > 0) {
             // Only send data packets if anything was actually written.
             InternalMsgUtil.send(connection, this, path, buffer);
         }
         buffer.release();
+    }
+
+    @Override
+    public NetIdData withoutBuffering() {
+        notBuffered();
+        return this;
+    }
+
+    @Override
+    public NetIdData withTinySize() {
+        setTinySize();
+        return this;
+    }
+
+    @Override
+    public NetIdData withNormalSize() {
+        setNormalSize();
+        return this;
+    }
+
+    @Override
+    public NetIdData withLargeSize() {
+        setLargeSize();
+        return this;
+    }
+
+    @Override
+    public NetIdData toClientOnly() {
+        _toClientOnly();
+        return this;
+    }
+
+    @Override
+    public NetIdData toServerOnly() {
+        _toServerOnly();
+        return this;
+    }
+
+    @Override
+    public NetIdData toEitherSide() {
+        _toEitherSide();
+        return this;
     }
 }
