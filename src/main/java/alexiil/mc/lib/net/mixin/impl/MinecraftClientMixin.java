@@ -10,7 +10,6 @@ package alexiil.mc.lib.net.mixin.impl;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -27,13 +26,8 @@ public class MinecraftClientMixin {
     @Shadow
     private RenderTickCounter renderTickCounter;
 
-    @Inject(
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/render/RenderTickCounter;beginRenderTick(J)V",
-            shift = Shift.AFTER),
-        method = "render(Z)V")
-    private void afterIncrementTickCounter(boolean value, CallbackInfo ci) {
+    @Inject(at = @At(value = "CONSTANT", args = { "stringValue=scheduledExecutables" }), method = "render(Z)V")
+    private void afterIncrementTickCounter(CallbackInfo ci) {
         ActiveClientConnection acc = CoreMinecraftNetUtil.getCurrentClientConnection();
         if (acc != null) {
             acc.onIncrementMinecraftTickCounter(

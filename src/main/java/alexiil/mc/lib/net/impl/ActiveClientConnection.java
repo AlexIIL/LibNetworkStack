@@ -117,7 +117,7 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
     }
 
     /** Called by {@link MinecraftClientMixin} (<strong>ONLY</strong>) when minecraft increases it's
-     * {@link MinecraftClient#getTickDelta()} value. Used internally o update the values returned by
+     * {@link MinecraftClient#getTickDelta()} value. Used internally to update the values returned by
      * {@link #getSmoothedServerTickValue()} and {@link #getSmoothedServerTickDelta()}.
      * 
      * @param milliseconds The value of {@link Util#getMeasuringTimeMs()} that was passed into
