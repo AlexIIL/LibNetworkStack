@@ -7,6 +7,8 @@
  */
 package alexiil.mc.lib.net;
 
+import javax.annotation.Nullable;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -17,7 +19,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 
 /** Special {@link PacketByteBuf} class that provides methods specific to "offset" reading and writing - like writing a
- * single bit to the stream, and auto-compacting it with similar bits into a single byte. */
+ * single bit to the stream, and auto-compacting it with similar bits into a single byte.
+ * <p>
+ * In addition this overrides a number of existing methods (like {@link #writeBoolean(boolean)},
+ * {@link #writeEnumConstant(Enum)}, {@link #writeVarInt(int)}, {@link #writeVarLong(long)} */
 public class NetByteBuf extends PacketByteBuf {
 
     public static final NetByteBuf EMPTY_BUFFER = new NetByteBuf(Unpooled.EMPTY_BUFFER);
@@ -307,6 +312,7 @@ public class NetByteBuf extends PacketByteBuf {
         return enums[index];
     }
 
+    /** Writes out a {@link BlockPos} using 3 {@link #writeVarInt(int)}s rather than {@link BlockPos#asLong()}. */
     @Override
     public NetByteBuf writeBlockPos(BlockPos pos) {
         writeVarInt(pos.getX());
@@ -315,11 +321,22 @@ public class NetByteBuf extends PacketByteBuf {
         return this;
     }
 
+    /** Reads a {@link BlockPos} using 3 {@link #readVarInt()}s rather than {@link BlockPos#fromLong(long)}. */
     @Override
     public BlockPos readBlockPos() {
         return new BlockPos(readVarInt(), readVarInt(), readVarInt());
     }
 
+    /** Writes out an integer using a variable number of bytes.
+     * <ul>
+     * <li>1 byte for -64 to 63</li>
+     * <li>2 bytes for -8,192 to 8,191</li>
+     * <li>3 bytes for -1,048,576 to 1,048,575</li>
+     * <li>4 bytes for -134,217,728 to 134,217,727</li>
+     * <li>5 bytes for {@link Integer#MIN_VALUE} to {@link Integer#MAX_VALUE}</li>
+     * </ul>
+     * <p>
+     * Unlike vanilla this doesn't use 5 bytes for all negative numbers. */
     @Override
     public NetByteBuf writeVarInt(int ival) {
         // 32 bits
@@ -355,6 +372,7 @@ public class NetByteBuf extends PacketByteBuf {
         return this;
     }
 
+    /** Reads out an integer using a variable number of bytes, assuming it was written by {@link #writeVarInt(int)} */
     @Override
     public int readVarInt() {
         int count = 0;
@@ -375,6 +393,33 @@ public class NetByteBuf extends PacketByteBuf {
         return ival;
     }
 
+    /** Exposes the vanilla method for writing out an unsigned integer using a variable number of bytes.
+     * <p>
+     * Unlike {@link #writeVarInt(int)} this only uses less than 5 bytes for non-negative integers less than
+     * <code>pow(2, 8 * 3 - 1)</code> () */
+    public NetByteBuf writeVarUnsignedInt(int ival) {
+        super.writeVarInt(ival);
+        return this;
+    }
+
+    /** Exposes the vanilla method for reading an unsigned integer using a variable number of bytes.
+     * <p>
+     * Unlike {@link #readVarInt()} this only uses less than 5 bytes for non-negative integers less than
+     * <code>pow(2, 8 * 3 - 1)</code> () */
+    public int readVarUnsignedInt() {
+        return super.readVarInt();
+    }
+
+    /** Writes out a long integer using a variable number of bytes.
+     * <ul>
+     * <li>1 byte for -64 to 63</li>
+     * <li>2 bytes for -8,192 to 8,191</li>
+     * <li>3 bytes for -1,048,576 to 1,048,575</li>
+     * <li>4 bytes for -134,217,728 to 134,217,727</li>
+     * </ul>
+     * <p>
+     * Unlike vanilla this doesn't use 9 bytes for all negative numbers. */
+    // TODO: Finish that!
     @Override
     public NetByteBuf writeVarLong(long lval) {
         // Copy-pasted from writeVarInt
@@ -413,6 +458,23 @@ public class NetByteBuf extends PacketByteBuf {
         return lval;
     }
 
+    /** Exposes the vanilla method for writing out an unsigned long integer using a variable number of bytes.
+     * <p>
+     * Unlike {@link #writeVarInt(int)} this only uses less than 9 bytes for non-negative integers less than
+     * <code>pow(2, 8 * 7 - 1)</code> () */
+    public NetByteBuf writeVarUnsignedLong(long lval) {
+        super.writeVarLong(lval);
+        return this;
+    }
+
+    /** Exposes the vanilla method for reading an unsigned long integer using a variable number of bytes.
+     * <p>
+     * Unlike {@link #readVarInt()} this only uses less than 9 bytes for non-negative integers less than
+     * <code>pow(2, 8 * 7 - 1)</code> () */
+    public long readVarUnsignedLong() {
+        return super.readVarLong();
+    }
+
     @Override
     public NetByteBuf writeIdentifier(Identifier id) {
         super.writeIdentifier(id);
@@ -427,11 +489,26 @@ public class NetByteBuf extends PacketByteBuf {
         return super.readIdentifier();
     }
 
+    /** Reads in a string, and tries to parse it as an {@link Identifier}. If the string is a valid identifier then it
+     * is returned, however if it isn't then {@link InvalidInputDataException} is thrown.
+     * 
+     * @throws InvalidInputDataException */
     public Identifier readIdentifierSafe() throws InvalidInputDataException {
         try {
             return super.readIdentifier();
         } catch (InvalidIdentifierException iee) {
             throw new InvalidInputDataException("Invalid Identifier", iee);
+        }
+    }
+
+    /** Like {@link #readIdentifierSafe()}, but returns null instead of throwing an error if the read string was
+     * invalid. */
+    @Nullable
+    public Identifier readIdentifierOrNull() {
+        try {
+            return super.readIdentifier();
+        } catch (InvalidIdentifierException iee) {
+            return null;
         }
     }
 

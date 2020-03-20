@@ -38,6 +38,32 @@ public class McBufferTester {
                 );
             }
         }
+
+        for (int shift = 0; shift < 32; shift++) {
+            int value = (1 << shift) - 1;
+            NetByteBuf buf = NetByteBuf.buffer();
+            buf.writeVarInt(value);
+            int used = buf.writerIndex();
+            System.out.println("writeVarInt(" + value + ") used " + used + (used == 1 ? " byte" : " bytes"));
+
+            value = (1 << shift);
+            buf = NetByteBuf.buffer();
+            buf.writeVarInt(value);
+            used = buf.writerIndex();
+            System.out.println("writeVarInt(" + value + ") used " + used + (used == 1 ? " byte" : " bytes"));
+
+            value = -(1 << shift);
+            buf = NetByteBuf.buffer();
+            buf.writeVarInt(value);
+            used = buf.writerIndex();
+            System.out.println("writeVarInt(" + value + ") used " + used + (used == 1 ? " byte" : " bytes"));
+
+            value = -(1 << shift) - 1;
+            buf = NetByteBuf.buffer();
+            buf.writeVarInt(value);
+            used = buf.writerIndex();
+            System.out.println("writeVarInt(" + value + ") used " + used + (used == 1 ? " byte" : " bytes"));
+        }
     }
 
     @Test
