@@ -9,8 +9,8 @@ package alexiil.mc.lib.net.impl;
 
 import net.fabricmc.fabric.api.network.PacketContext;
 
-import net.minecraft.client.network.packet.CustomPayloadS2CPacket;
 import net.minecraft.network.Packet;
+import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Util;

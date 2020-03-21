@@ -13,8 +13,8 @@ import io.netty.buffer.Unpooled;
 
 import net.fabricmc.fabric.api.network.PacketContext;
 
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.util.PacketByteBuf;
 
 import alexiil.mc.lib.net.NetByteBuf;
 

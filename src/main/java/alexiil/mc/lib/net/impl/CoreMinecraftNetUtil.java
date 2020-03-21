@@ -194,7 +194,7 @@ public class CoreMinecraftNetUtil {
     private static ActiveServerConnection getServerConnection(PacketContext ctx) {
         return serverConnections.computeIfAbsent(ctx, c -> {
             ServerPlayNetworkHandler networkHandler = (ServerPlayNetworkHandler) c;
-            if (!networkHandler.client.isOpen()) {
+            if (!networkHandler.connection.isOpen()) {
                 if (DEBUG) {
                     LibNetworkStack.LOGGER.info(
                         "Disallowed server connection for " + ctx.getPlayer() + " because it's channel is not open!"
@@ -230,7 +230,7 @@ public class CoreMinecraftNetUtil {
         Iterator<ActiveServerConnection> iterator = serverConnections.values().iterator();
         while (iterator.hasNext()) {
             ActiveServerConnection connection = iterator.next();
-            if (!connection.netHandler.client.isOpen()) {
+            if (!connection.netHandler.connection.isOpen()) {
                 iterator.remove();
                 if (DEBUG) {
                     LibNetworkStack.LOGGER

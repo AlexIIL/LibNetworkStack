@@ -10,12 +10,12 @@ package alexiil.mc.lib.net.impl;
 import java.util.Objects;
 
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.container.Container;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.screen.ScreenHandler;
 import net.minecraft.util.math.BlockPos;
 
 import alexiil.mc.lib.net.ActiveConnection;
@@ -40,7 +40,12 @@ public final class McNetworkStack {
 
     public static final ParentNetIdSingle<BlockEntity> BLOCK_ENTITY;
     public static final ParentNetIdSingle<Entity> ENTITY;
-    public static final ParentNetIdSingle<Container> CONTAINER;
+
+    public static final ParentNetIdSingle<ScreenHandler> SCREEN_HANDLER;
+
+    /** @deprecated Use {@link #SCREEN_HANDLER} instead, due to the yarn name change. */
+    @Deprecated
+    public static final ParentNetIdSingle<ScreenHandler> CONTAINER;
 
     public static final NetObjectCache<ItemStack> CACHE_ITEMS_WITHOUT_AMOUNT;
 
@@ -76,13 +81,14 @@ public final class McNetworkStack {
                 buffer.writeInt(value.getEntityId());
             }
         };
-        CONTAINER = new ParentNetIdSingle<Container>(ROOT, Container.class, "container", Integer.BYTES) {
+        // We're not changing the internal name, because that would needlessly break compat
+        SCREEN_HANDLER = new ParentNetIdSingle<ScreenHandler>(ROOT, ScreenHandler.class, "container", Integer.BYTES) {
             @Override
-            public Container readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+            public ScreenHandler readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 ActiveMinecraftConnection mcConn = (ActiveMinecraftConnection) ctx.getConnection();
                 PlayerEntity player = mcConn.ctx.getPlayer();
                 int syncId = buffer.readInt();
-                Container currentContainer = player.container;
+                ScreenHandler currentContainer = player.currentScreenHandler;
                 if (currentContainer == null || currentContainer.syncId != syncId) {
                     return null;
                 }
@@ -90,13 +96,15 @@ public final class McNetworkStack {
             }
 
             @Override
-            public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, Container value) {
+            public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, ScreenHandler value) {
                 buffer.writeInt(value.syncId);
             }
         };
+        CONTAINER = SCREEN_HANDLER;
 
-        CACHE_ITEMS_WITHOUT_AMOUNT = new NetObjectCache<>(
-            ROOT.child("cache_item_stack"), new Hash.Strategy<ItemStack>() {
+        CACHE_ITEMS_WITHOUT_AMOUNT
+            = new NetObjectCache<>(ROOT.child("cache_item_stack"), new Hash.Strategy<ItemStack>()
+            {
 
                 @Override
                 public int hashCode(ItemStack o) {
@@ -148,7 +156,6 @@ public final class McNetworkStack {
                         return stack;
                     }
                 }
-            }
-        );
+            });
     }
 }

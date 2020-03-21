@@ -14,7 +14,7 @@ import io.netty.buffer.Unpooled;
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 import alexiil.mc.lib.net.NetByteBuf;
 
