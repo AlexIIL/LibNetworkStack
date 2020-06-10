@@ -40,7 +40,7 @@ public final class NetIdData extends NetIdSeparate {
     }
 
     @Override
-    boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    boolean receive(CheckingNetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         receiver.receive(buffer, ctx);
         return true;
     }
@@ -51,12 +51,19 @@ public final class NetIdData extends NetIdSeparate {
     }
 
     public void send(ActiveConnection connection, IMsgDataWriter writer) {
-        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
         validateSendingSide(ctx);
-        writer.write(buffer, ctx);
+        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
+        CheckingNetByteBuf checkingBuffer = null;
+        if (connection.sendTypes) {
+            checkingBuffer = new CheckingNetByteBuf(buffer, NetByteBuf.buffer());
+        }
+        writer.write(checkingBuffer == null ? buffer : checkingBuffer, ctx);
         if (buffer.readableBytes() > 0) {
             // Only send data packets if anything was actually written.
+            if (checkingBuffer != null) {
+                InternalMsgUtil.sendNextTypes(connection, checkingBuffer.typeBuffer, checkingBuffer.getCountWrite());
+            }
             InternalMsgUtil.send(connection, this, path, buffer);
         }
         buffer.release();

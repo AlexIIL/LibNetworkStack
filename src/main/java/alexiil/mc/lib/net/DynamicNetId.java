@@ -19,7 +19,7 @@ public final class DynamicNetId<T> extends ParentNetIdSingle<T> {
     final LinkAccessor<T> linkGetter;
 
     public DynamicNetId(Class<T> clazz, LinkAccessor<T> linkGetter) {
-        super(null, clazz, "", DYNAMIC_LENGTH);
+        super(null, clazz, "dynamic", DYNAMIC_LENGTH);
         this.linkGetter = linkGetter;
     }
 
@@ -34,13 +34,16 @@ public final class DynamicNetId<T> extends ParentNetIdSingle<T> {
     }
 
     @Override
-    protected void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
+    protected void writeDynamicContext(
+        CheckingNetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath
+    ) {
         writeParent(buffer, ctx, linkGetter.getLink(value), resolvedPath);
         resolvedPath.add(this);
     }
 
-    private <P> void writeParent(NetByteBuf buffer, IMsgWriteCtx ctx, DynamicNetLink<P, T> link, List<
-        TreeNetIdBase> resolvedPath) {
+    private <P> void writeParent(
+        CheckingNetByteBuf buffer, IMsgWriteCtx ctx, DynamicNetLink<P, T> link, List<TreeNetIdBase> resolvedPath
+    ) {
         assert link.parentId.childId == this;
         link.parentId.parent.writeDynamicContext(buffer, ctx, link.parent, resolvedPath);
         resolvedPath.add(link.parentId);

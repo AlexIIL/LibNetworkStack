@@ -25,11 +25,12 @@ public abstract class NetIdTyped<T> extends NetIdBase {
     }
 
     @Override
-    final boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
-        T obj = parent.readContext(buffer, ctx);
+    final boolean receive(CheckingNetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+        T obj = parent.readContextCall(buffer, ctx);
         if (obj == null) {
             return false;
         } else {
+            buffer.readMarkerId(ctx, this);
             receive(buffer, ctx, obj);
             return true;
         }

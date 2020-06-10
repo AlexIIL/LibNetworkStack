@@ -34,6 +34,7 @@ import net.minecraft.network.NetworkSide;
 import net.minecraft.network.NetworkState;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -143,8 +144,11 @@ public class CoreMinecraftNetUtil {
         ctx.getTaskQueue().execute(() -> {
             try {
                 connection.onReceiveRawData(b);
+                b.release();
             } catch (InvalidInputDataException e) {
                 e.printStackTrace();
+                ((ClientPlayNetworkHandler) ctx).getConnection()
+                    .disconnect(new LiteralText("LibNetworkStack: read error (see logs for details)"));
             }
         });
     }
@@ -187,6 +191,8 @@ public class CoreMinecraftNetUtil {
                 b.release();
             } catch (InvalidInputDataException e) {
                 e.printStackTrace();
+                ((ServerPlayNetworkHandler) ctx)
+                    .disconnect(new LiteralText("LibNetworkStack: read error (see server logs for more details)\n" + e));
             }
         });
     }

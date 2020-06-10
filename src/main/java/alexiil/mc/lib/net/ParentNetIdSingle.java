@@ -31,12 +31,10 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
         this.clazz = clazz;
     }
 
-    /**
-     * @param parent The parent.
+    /** @param parent The parent.
      * @param clazz The type of the object to be written and read.
-     * @param name The name. (See 
-     * @param thisLength
-     */
+     * @param name The name. (See
+     * @param thisLength */
     public ParentNetIdSingle(ParentNetId parent, Class<T> clazz, String name, int thisLength) {
         super(parent, name, thisLength);
         this.clazz = clazz;
@@ -92,8 +90,9 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
         return new ParentNetIdCast<>(this, subName, subClass);
     }
 
-    public <U> ParentNetIdExtractor<T, U> extractor(Class<U> targetClass, String subName, Function<U, T> forward,
-        Function<T, U> backward) {
+    public <U> ParentNetIdExtractor<T, U> extractor(
+        Class<U> targetClass, String subName, Function<U, T> forward, Function<T, U> backward
+    ) {
         return new ParentNetIdExtractor<>(this, subName, targetClass, forward, backward);
     }
 
@@ -103,12 +102,26 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
 
     protected abstract void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value);
 
-    protected void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
+    T readContextCall(CheckingNetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+        buffer.readMarkerId(ctx, this);
+        return readContext(buffer, ctx);
+    }
+
+    void writeContextCall(CheckingNetByteBuf buffer, IMsgWriteCtx ctx, T value) {
+        if (buffer.hasTypeData()) {
+            buffer.writeMarkerId(InternalMsgUtil.getWriteId(ctx.getConnection(), this, path));
+        }
         writeContext(buffer, ctx, value);
+    }
+
+    protected void writeDynamicContext(
+        CheckingNetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath
+    ) {
+        writeContextCall(buffer, ctx, value);
         Collections.addAll(resolvedPath, this.path.array);
     }
 
-    public final void writeKey(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
+    public final void writeKey(CheckingNetByteBuf buffer, IMsgWriteCtx ctx, T value) {
         if (pathContainsDynamicParent) {
             int wIndex = buffer.writerIndex();
             buffer.writeInt(0);
@@ -123,7 +136,7 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
         }
     }
 
-    public final T readKey(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+    public final T readKey(CheckingNetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
         if (!pathContainsDynamicParent) {
             // Static path
             return readContext(buffer, ctx);

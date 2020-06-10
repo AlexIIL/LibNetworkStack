@@ -8,9 +8,9 @@
 package alexiil.mc.lib.net;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.util.internal.StringUtil;
 
 /** Various utilities for reading and writing data */
@@ -35,7 +35,7 @@ public final class MsgUtil {
 
     /** Checks to make sure that this buffer has been *completely* read (so that there are no readable bytes left
      * over */
-    public static void ensureEmpty(ByteBuf buf, boolean throwError, String extra) {
+    public static void ensureEmpty(ByteBuf buf, boolean throwError, String extra) throws InvalidInputDataException {
         int readableBytes = buf.readableBytes();
         int rb = readableBytes;
 
@@ -45,13 +45,11 @@ public final class MsgUtil {
 
         if (readableBytes > 0) {
             int ri = buf.readerIndex();
-            // Get a (small) bit of the data
-            byte[] selection = new byte[buf.writerIndex()];
-            buf.getBytes(0, selection);
-            String summary = formatPacketSelection(selection, ri, rb);
-            IllegalStateException ex = new IllegalStateException(
-                "Did not fully read the data! [" + extra + "]" + summary
-            );
+            ByteBuf dst = Unpooled.buffer();
+            buf.getBytes(0, dst, buf.writerIndex());
+            String summary = formatPacketSelection(dst, dst.readableBytes(), ri);
+            IllegalStateException ex
+                = new IllegalStateException("Did not fully read the data! [" + extra + "]\n" + summary + " --" + rb);
             if (throwError) {
                 throw ex;
             } else {
@@ -63,22 +61,31 @@ public final class MsgUtil {
 
     public static void printWholeBuffer(ByteBuf buf) {
         int readerIndex = buf.readerIndex();
-        int readableBytes = buf.readableBytes();
-        byte[] selection = new byte[buf.writerIndex()];
-        buf.getBytes(0, selection);
-        LibNetworkStack.LOGGER.info("  " + formatPacketSelection(selection, readerIndex, readableBytes));
+        ByteBuf dst = Unpooled.buffer();
+        buf.getBytes(0, dst, buf.writerIndex());
+        LibNetworkStack.LOGGER.info("  " + formatPacketSelection(dst, dst.readableBytes(), readerIndex));
     }
 
-    private static String formatPacketSelection(byte[] selection, int readerIndex, int readableBytes) {
-        StringBuilder sb = new StringBuilder("\n");
+    private static String formatPacketSelection(ByteBuf buffer, int length, int readerIndex) {
+        StringBuilder sb = new StringBuilder();
+        appendBufferData(buffer, length, sb, "", readerIndex);
+        return sb.toString();
+    }
+
+    public static void appendBufferData(
+        ByteBuf buffer, int length, StringBuilder sb, String linePrefix, int readerIndex
+    ) {
+        linePrefix = "\n" + linePrefix;
 
         for (int i = 0; true; i++) {
             int from = i * 20;
-            int to = Math.min(from + 20, selection.length);
+            int to = Math.min(from + 20, length);
             if (from >= to) break;
-            byte[] part = Arrays.copyOfRange(selection, from, to);
-            for (int j = 0; j < part.length; j++) {
-                byte b = part[j];
+            if (i > 0) {
+                sb.append(linePrefix);
+            }
+            for (int j = from; j < to; j++) {
+                byte b = buffer.getByte(j);
                 sb.append(StringUtil.byteToHexStringPadded(b));
                 if (from + j + 1 == readerIndex) {
                     sb.append('#');
@@ -92,18 +99,14 @@ public final class MsgUtil {
             }
 
             sb.append("| ");
-            for (byte b : part) {
+            for (int j = from; j < to; j++) {
+                byte b = buffer.getByte(j);
                 char c = (char) b;
                 if (c < 32 || c > 127) {
                     c = ' ';
                 }
                 sb.append(c);
             }
-            sb.append('\n');
         }
-        sb.append("-- " + readableBytes);
-
-        String summary = sb.toString();
-        return summary;
     }
 }

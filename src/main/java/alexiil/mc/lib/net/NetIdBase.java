@@ -272,8 +272,5 @@ public abstract class NetIdBase extends TreeNetIdBase {
     }
 
     /** @return True if the parent element could be found, false if it's null. */
-    abstract boolean receive(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
-
-    /* public final void send(ConnectionInfo connection) { } protected abstract void send(ConnectionInfo connection,
-     * NetByteBuf buf, IMsgWriteCtx ctx); */
+    abstract boolean receive(CheckingNetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;
 }

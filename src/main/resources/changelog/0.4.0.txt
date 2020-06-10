@@ -1,0 +1,14 @@
+Changes:
+
+* Updated to 1.16-pre.2.
+* Allowed this version to be loaded in any version of 1.16.
+* Print more debugging information about a packet if it failed to read correctly.
+    * If "debug" or "debug.request_types" is enabled then this will include a packet payload breakdown.
+* Added a config, with two options:
+    * "debug": an alternative for "-Dlibnetworkstack.debug=true"
+    * "debug.request_types": requests debugging type information from the other side.
+* Added a new interface: "IBlockEntityInitialChunkData", which can be used to
+   send custom data to each player instead of vanilla's "toInitialChunkDataTag()".
+   (Although this is mostly useful for BE's that use LNS exclusively for networking).
+* Exceptions thrown while reading a packet will now cause the network 
+   connection to be disconnected, as minecraft used to swallow any problems.

@@ -54,24 +54,32 @@ public final class NetIdDataK<T> extends NetIdTyped<T> {
     }
 
     public void send(ActiveConnection connection, T obj, IMsgDataWriterK<T> writer) {
-        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
         validateSendingSide(ctx);
+        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
+        NetByteBuf bufferTypes = connection.sendTypes ? NetByteBuf.buffer() : null;
+        CheckingNetByteBuf checkingBuffer = new CheckingNetByteBuf(buffer, bufferTypes);
         final NetIdPath resolvedPath;
         if (parent.pathContainsDynamicParent) {
             List<TreeNetIdBase> nPath = new ArrayList<>();
-            parent.writeDynamicContext(buffer, ctx, obj, nPath);
+            parent.writeDynamicContext(checkingBuffer, ctx, obj, nPath);
             nPath.add(this);
-            TreeNetIdBase[] array = nPath.toArray(new TreeNetIdBase[0]);
-            resolvedPath = new NetIdPath(array);
+            resolvedPath = new NetIdPath(nPath);
         } else {
-            parent.writeContext(buffer, ctx, obj);
+            parent.writeContextCall(checkingBuffer, ctx, obj);
             resolvedPath = this.path;
         }
-        int headerLength = buffer.writerIndex();
-        writer.write(obj, buffer, ctx);
-        if (headerLength != buffer.writerIndex()) {
+        if (checkingBuffer.hasTypeData()) {
+            int thisId = InternalMsgUtil.getWriteId(connection, this, resolvedPath);
+            checkingBuffer.writeMarkerId(thisId);
+        }
+        int headerLength = checkingBuffer.writerIndex();
+        writer.write(obj, checkingBuffer, ctx);
+        if (headerLength != checkingBuffer.writerIndex()) {
             // Only send data packets if anything was actually written.
+            if (bufferTypes != null) {
+                InternalMsgUtil.sendNextTypes(connection, bufferTypes, checkingBuffer.getCountWrite());
+            }
             InternalMsgUtil.send(connection, this, resolvedPath, buffer);
         }
         buffer.release();

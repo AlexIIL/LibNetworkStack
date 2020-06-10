@@ -16,7 +16,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.util.math.BlockPos;
 
 import alexiil.mc.lib.net.ActiveConnection;
 import alexiil.mc.lib.net.IMsgReadCtx;
@@ -50,22 +49,17 @@ public final class McNetworkStack {
     public static final NetObjectCache<ItemStack> CACHE_ITEMS_WITHOUT_AMOUNT;
 
     static {
-        BLOCK_ENTITY = new ParentNetIdSingle<BlockEntity>(ROOT, BlockEntity.class, "block_entity", 3 * Integer.BYTES) {
+        BLOCK_ENTITY = new ParentNetIdSingle<BlockEntity>(ROOT, BlockEntity.class, "block_entity", -1) {
             @Override
             public BlockEntity readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 ActiveMinecraftConnection mcConn = (ActiveMinecraftConnection) ctx.getConnection();
                 PlayerEntity player = mcConn.ctx.getPlayer();
-                int x = buffer.readInt();
-                int y = buffer.readInt();
-                int z = buffer.readInt();
-                return player.world.getBlockEntity(new BlockPos(x, y, z));
+                return player.world.getBlockEntity(buffer.readBlockPos());
             }
 
             @Override
             public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, BlockEntity value) {
-                buffer.writeInt(value.getPos().getX());
-                buffer.writeInt(value.getPos().getY());
-                buffer.writeInt(value.getPos().getZ());
+                buffer.writeBlockPos(value.getPos());
             }
         };
         ENTITY = new ParentNetIdSingle<Entity>(ROOT, Entity.class, "entity", Integer.BYTES) {

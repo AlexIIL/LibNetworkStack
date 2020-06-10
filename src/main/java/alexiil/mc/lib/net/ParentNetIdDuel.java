@@ -32,17 +32,25 @@ public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
 
     @Override
     protected final void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value) {
-        Parent p = extractParent(value);
-        parent.writeContext(buffer, ctx, p);
         writeContext0(buffer, ctx, value);
     }
 
     @Override
-    protected void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath) {
-        Parent p = extractParent(value);
-        parent.writeDynamicContext(buffer, ctx, p, resolvedPath);
-        writeContext0(buffer, ctx, value);
+    final void writeContextCall(CheckingNetByteBuf buffer, IMsgWriteCtx ctx, T value) {
+        parent.writeContextCall(buffer, ctx, extractParent(value));
+        super.writeContextCall(buffer, ctx, value);
+    }
+
+    @Override
+    protected void writeDynamicContext(
+        CheckingNetByteBuf buffer, IMsgWriteCtx ctx, T value, List<TreeNetIdBase> resolvedPath
+    ) {
+        parent.writeDynamicContext(buffer, ctx, extractParent(value), resolvedPath);
         resolvedPath.add(this);
+        if (buffer.hasTypeData()) {
+            buffer.writeMarkerId(InternalMsgUtil.getWriteId(ctx.getConnection(), this, new NetIdPath(resolvedPath)));
+        }
+        writeContext0(buffer, ctx, value);
     }
 
     protected abstract Parent extractParent(T value);
@@ -51,9 +59,17 @@ public abstract class ParentNetIdDuel<Parent, T> extends ParentNetIdSingle<T> {
 
     @Override
     protected final T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
-        Parent p = parent.readContext(buffer, ctx);
+        throw new UnsupportedOperationException("Call readContextCall instead!");
+    }
+
+    @Override
+    final T readContextCall(CheckingNetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+        Parent p = parent.readContextCall(buffer, ctx);
         if (p == null) {
             return null;
+        }
+        if (!(this instanceof ParentDynamicNetId) && !(this instanceof ResolvedDynamicNetId)) {
+            buffer.readMarkerId(ctx, this);
         }
         return readContext(buffer, ctx, p);
     }

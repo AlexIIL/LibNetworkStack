@@ -25,7 +25,34 @@ import net.minecraft.util.math.MathHelper;
  * {@link #writeEnumConstant(Enum)}, {@link #writeVarInt(int)}, {@link #writeVarLong(long)} */
 public class NetByteBuf extends PacketByteBuf {
 
+    public static final class SavedReaderIndex {
+        public final int readerIndex;
+        final int readPartialOffset;
+        final int readPartialCache;
+
+        SavedReaderIndex(NetByteBuf buffer) {
+            readerIndex = buffer.readerIndex();
+            readPartialOffset = buffer.readPartialOffset;
+            readPartialCache = buffer.readPartialCache;
+        }
+    }
+
     public static final NetByteBuf EMPTY_BUFFER = new NetByteBuf(Unpooled.EMPTY_BUFFER);
+
+    public static final int MIN_VAR_S_INT_1_BYTE = -(1 << 6);
+    public static final int MAX_VAR_S_INT_1_BYTE = (1 << 6) - 1;
+    public static final int MIN_VAR_S_INT_2_BYTES = -(1 << 6 + 7);
+    public static final int MAX_VAR_S_INT_2_BYTES = (1 << 6 + 7) - 1;
+    public static final int MIN_VAR_S_INT_3_BYTES = -(1 << 6 + 7 * 2);
+    public static final int MAX_VAR_S_INT_3_BYTES = (1 << 6 + 7 * 2) - 1;
+    public static final int MIN_VAR_S_INT_4_BYTES = -(1 << 6 + 7 * 3);
+    public static final int MAX_VAR_S_INT_4_BYTES = (1 << 6 + 7 * 3) - 1;
+
+    public static final int MIN_VAR_U_INT_SMALL = 0;
+    public static final int MAX_VAR_U_INT_1_BYTE = 1 << 7;
+    public static final int MAX_VAR_U_INT_2_BYTES = 1 << 7 * 2;
+    public static final int MAX_VAR_U_INT_3_BYTES = 1 << 7 * 3;
+    public static final int MAX_VAR_U_INT_4_BYTES = 1 << 7 * 4;
 
     /** @return A new {@link NetByteBuf} from {@link Unpooled#buffer()} */
     public static NetByteBuf buffer() {
@@ -40,6 +67,9 @@ public class NetByteBuf extends PacketByteBuf {
     // Byte-based flag access
     private int readPartialOffset = 8;// so it resets down to 0 and reads a byte on read
     private int readPartialCache;
+
+    private int readPartialOffsetMark = 8;
+    private int readPartialCacheMark;
 
     /** The byte position that is currently being written to. -1 means that no bytes have been written to yet. */
     private int writePartialIndex = -1;
@@ -82,6 +112,33 @@ public class NetByteBuf extends PacketByteBuf {
         writePartialIndex = -1;
         writePartialOffset = 0;
         writePartialCache = 0;
+        return this;
+    }
+
+    @Override
+    public NetByteBuf markReaderIndex() {
+        super.markReaderIndex();
+        readPartialOffsetMark = readPartialOffset;
+        readPartialCacheMark = readPartialCache;
+        return this;
+    }
+
+    @Override
+    public NetByteBuf resetReaderIndex() {
+        super.resetReaderIndex();
+        readPartialOffset = readPartialOffsetMark;
+        readPartialCache = readPartialCacheMark;
+        return this;
+    }
+
+    public SavedReaderIndex saveReaderIndex() {
+        return new SavedReaderIndex(this);
+    }
+
+    public NetByteBuf resetReaderIndex(SavedReaderIndex index) {
+        readerIndex(index.readerIndex);
+        readPartialOffset = index.readPartialOffset;
+        readPartialCache = index.readPartialCache;
         return this;
     }
 
@@ -329,10 +386,10 @@ public class NetByteBuf extends PacketByteBuf {
 
     /** Writes out an integer using a variable number of bytes.
      * <ul>
-     * <li>1 byte for -64 to 63</li>
-     * <li>2 bytes for -8,192 to 8,191</li>
-     * <li>3 bytes for -1,048,576 to 1,048,575</li>
-     * <li>4 bytes for -134,217,728 to 134,217,727</li>
+     * <li>1 byte for {@link #MIN_VAR_S_INT_1_BYTE} to {@link #MAX_VAR_S_INT_1_BYTE}</li>
+     * <li>2 bytes for {@link #MIN_VAR_S_INT_2_BYTES} to {@link #MAX_VAR_S_INT_2_BYTES}</li>
+     * <li>3 bytes for {@link #MIN_VAR_S_INT_3_BYTES} to {@link #MAX_VAR_S_INT_3_BYTES}</li>
+     * <li>4 bytes for {@link #MIN_VAR_S_INT_4_BYTES} to {@link #MAX_VAR_S_INT_4_BYTES}</li>
      * <li>5 bytes for {@link Integer#MIN_VALUE} to {@link Integer#MAX_VALUE}</li>
      * </ul>
      * <p>
@@ -394,6 +451,13 @@ public class NetByteBuf extends PacketByteBuf {
     }
 
     /** Exposes the vanilla method for writing out an unsigned integer using a variable number of bytes.
+     * <ul>
+     * <li>1 byte for {@link #MIN_VAR_U_INT_SMALL} to {@link #MAX_VAR_S_INT_1_BYTE}</li>
+     * <li>2 bytes for {@link #MIN_VAR_U_INT_SMALL} to {@link #MAX_VAR_S_INT_2_BYTES}</li>
+     * <li>3 bytes for {@link #MIN_VAR_U_INT_SMALL} to {@link #MAX_VAR_S_INT_3_BYTES}</li>
+     * <li>4 bytes for {@link #MIN_VAR_U_INT_SMALL} to {@link #MAX_VAR_S_INT_4_BYTES}</li>
+     * <li>5 bytes for {@link Integer#MIN_VALUE} to {@link Integer#MAX_VALUE}</li>
+     * </ul>
      * <p>
      * Unlike {@link #writeVarInt(int)} this only uses less than 5 bytes for non-negative integers less than
      * <code>pow(2, 8 * 3 - 1)</code> () */

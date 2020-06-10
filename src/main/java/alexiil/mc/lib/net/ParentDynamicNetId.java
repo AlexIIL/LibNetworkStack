@@ -43,7 +43,7 @@ public final class ParentDynamicNetId<P, C> extends ParentNetIdDuel<P, C> {
     }
 
     @Override
-    public void writeDynamicContext(NetByteBuf buffer, IMsgWriteCtx ctx, C value, List<TreeNetIdBase> resolvedPath) {
+    public void writeDynamicContext(CheckingNetByteBuf buffer, IMsgWriteCtx ctx, C value, List<TreeNetIdBase> resolvedPath) {
         throw new IllegalStateException("This should never be called by DynamicNetId!");
     }
 

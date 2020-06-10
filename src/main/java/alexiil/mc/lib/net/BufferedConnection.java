@@ -41,7 +41,7 @@ public abstract class BufferedConnection extends ActiveConnection {
         }
         ourMaxBandwidth = to;
         NetByteBuf data = NetByteBuf.buffer(6);
-        data.writeInt(InternalMsgUtil.ID_INTERNAL_NEW_BANDWIDTH);
+        data.writeVarUnsignedInt(InternalMsgUtil.ID_INTERNAL_NEW_BANDWIDTH);
         data.writeShort(to / MIN_BANDWIDTH);
         sendRawData0(data);
         data.release();

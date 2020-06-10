@@ -15,6 +15,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import net.fabricmc.fabric.api.network.PacketContext;
+
 import alexiil.mc.lib.net.impl.ActiveMinecraftConnection;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -34,6 +35,12 @@ public abstract class ActiveConnection {
     /** The next ID to use for *writing*. Note that the other side of the connection will tell *us* what ID's to
      * allocate. */
     int nextFreeId = InternalMsgUtil.COUNT_HARDCODED_IDS;
+
+    boolean sendTypes = LibNetworkStack.CONFIG_RECORD_TYPES;
+    // boolean storeStacktraces = false;
+
+    int lastReceivedTypesCount;
+    NetByteBuf lastReceivedTypes;
 
     public ActiveConnection(ParentNetId rootId) {
         this.rootId = rootId;

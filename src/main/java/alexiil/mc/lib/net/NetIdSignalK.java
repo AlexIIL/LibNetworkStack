@@ -80,19 +80,29 @@ public final class NetIdSignalK<T> extends NetIdTyped<T> {
     /** Sends this signal over the specified connection */
     @Override
     public void send(ActiveConnection connection, T obj) {
-        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
         validateSendingSide(ctx);
+        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
+        NetByteBuf bufferTypes = connection.sendTypes ? NetByteBuf.buffer() : null;
+        CheckingNetByteBuf checkingBuffer = new CheckingNetByteBuf(buffer, bufferTypes);
+        NetIdPath resolvedPath;
         if (parent.pathContainsDynamicParent) {
             List<TreeNetIdBase> nPath = new ArrayList<>();
-            parent.writeDynamicContext(buffer, ctx, obj, nPath);
+            parent.writeDynamicContext(checkingBuffer, ctx, obj, nPath);
             nPath.add(this);
-            TreeNetIdBase[] array = nPath.toArray(new TreeNetIdBase[0]);
-            InternalMsgUtil.send(connection, this, new NetIdPath(array), buffer);
+            resolvedPath = new NetIdPath(nPath);
         } else {
-            parent.writeContext(buffer, ctx, obj);
-            InternalMsgUtil.send(connection, this, path, buffer);
+            parent.writeContextCall(checkingBuffer, ctx, obj);
+            resolvedPath = path;
         }
+        if (checkingBuffer.hasTypeData()) {
+            int thisId = InternalMsgUtil.getWriteId(connection, this, resolvedPath);
+            checkingBuffer.writeMarkerId(thisId);
+        }
+        if (bufferTypes != null) {
+            InternalMsgUtil.sendNextTypes(connection, bufferTypes, checkingBuffer.getCountWrite());
+        }
+        InternalMsgUtil.send(connection, this, resolvedPath, buffer);
         buffer.release();
     }
 }

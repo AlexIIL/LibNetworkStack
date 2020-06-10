@@ -8,6 +8,7 @@
 package alexiil.mc.lib.net;
 
 import java.util.Arrays;
+import java.util.List;
 
 final class NetIdPath {
     private static final NetIdPath EMPTY = new NetIdPath(new TreeNetIdBase[0]);
@@ -22,6 +23,10 @@ final class NetIdPath {
 
     NetIdPath(TreeNetIdBase single) {
         this(new TreeNetIdBase[] { single });
+    }
+
+    NetIdPath(List<? extends TreeNetIdBase> list) {
+        this(list.toArray(new TreeNetIdBase[0]));
     }
 
     @Override

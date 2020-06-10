@@ -12,7 +12,7 @@ final class ResolvedDynamicNetId<T> extends ParentNetIdDuel<T, T> {
     final DynamicNetId<T> wrapped;
 
     public ResolvedDynamicNetId(ParentNetIdSingle<T> parent, DynamicNetId<T> wrapped) {
-        super(parent, "__unused!!", wrapped.clazz, 0);
+        super(parent, "dynamic", wrapped.clazz, 0);
         this.wrapped = wrapped;
     }
 
