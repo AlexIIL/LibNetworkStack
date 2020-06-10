@@ -58,8 +58,7 @@ public class LibNetworkStack implements ModInitializer {
         }
         CONFIG_FILE_LOCATION = fileLoc;
         Properties props = new Properties();
-        boolean loading = cfgFile.exists();
-        if (loading) {
+        if (cfgFile.exists()) {
             try (InputStreamReader isr = new InputStreamReader(new FileInputStream(cfgFile), StandardCharsets.UTF_8)) {
                 props.load(isr);
             } catch (IOException e) {
@@ -69,8 +68,8 @@ public class LibNetworkStack implements ModInitializer {
 
         boolean hasAll = true;
 
-        hasAll &= props.containsKey("debug");
-        debug |= "true".equalsIgnoreCase(props.getProperty("debug", "false"));
+        hasAll &= props.containsKey("debug.all");
+        debug |= "true".equalsIgnoreCase(props.getProperty("debug.all", "false"));
 
         DEBUG = debug;
 
@@ -79,14 +78,14 @@ public class LibNetworkStack implements ModInitializer {
 
         if (!hasAll) {
             try (Writer fw = new OutputStreamWriter(new FileOutputStream(cfgFile, true), StandardCharsets.UTF_8)) {
-                fw.append("# LibBlockAttributes options file (fluids module)\n");
-                fw.append("# Removing an option will reset it back to the default value\n");
+                fw.append("# LibNetworkStack configuration file.\n");
+                fw.append("# Removing an option will reset it back to the default value.\n");
                 fw.append("# Removing or altering comments doesn't replace them.\n\n");
 
-                if (!props.containsKey("debug")) {
+                if (!props.containsKey("debug.all")) {
                     fw.append("# True to enable all debugging, or false to use the\n");
                     fw.append("# other options for more fine-grained control.\n");
-                    fw.append("debug=false\n\n");
+                    fw.append("debug.all=false\n\n");
                 }
 
                 if (!props.containsKey("debug.record_types")) {
