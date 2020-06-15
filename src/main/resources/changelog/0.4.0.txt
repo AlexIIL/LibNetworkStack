@@ -7,8 +7,8 @@ Changes:
 * Added a config, with two options:
     * "debug": an alternative for "-Dlibnetworkstack.debug=true"
     * "debug.request_types": requests debugging type information from the other side.
-* Added a new interface: "IBlockEntityInitialChunkData", which can be used to
-   send custom data to each player instead of vanilla's "toInitialChunkDataTag()".
+* Added a new interface: "IBlockEntityInitialData", which can be used to send custom
+   data to each player instead of vanilla's "toInitialChunkDataTag()", and "toUpdatePacket()".
    (Although this is mostly useful for BE's that use LNS exclusively for networking).
 * Exceptions thrown while reading a packet will now cause the network 
    connection to be disconnected, as minecraft used to swallow any problems.
