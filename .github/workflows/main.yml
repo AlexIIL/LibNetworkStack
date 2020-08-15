@@ -14,10 +14,23 @@ on:
 jobs:
   check_license:
     runs-on: ubuntu-latest
-    name: 'Check License (Main)'
+    name: 'Check License'
     steps:
     - uses: actions/checkout@v2
-    - name: 'Check License (Setup)'
-      run: './gradlew tasks'
-    - name: 'Check License (Run)'
+    - name: '(Actually check the license)'
       run: './gradlew checkLicense'
+      
+  test:
+    runs-on: ubuntu-latest
+    name: 'Test'
+    steps:
+      - uses: actions/checkout@v2
+      - name: '(run)'
+        run: './gradlew test'
+  build:
+    runs-on: ubuntu-latest
+    name: 'Build'
+    steps:
+      - uses: actions/checkout@v2
+      - name: '(run)'
+        run: './gradlew build'
