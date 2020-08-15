@@ -12,25 +12,16 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  check_license:
+  all:
     runs-on: ubuntu-latest
-    name: 'Check License'
+    name: 'License, Test, Build'
     steps:
     - uses: actions/checkout@v2
-    - name: '(Actually check the license)'
+    - name: 'Setup'
+      run: './gradlew tasks'
+    - name: 'Check License'
       run: './gradlew checkLicense'
-      
-  test:
-    runs-on: ubuntu-latest
-    name: 'Test'
-    steps:
-      - uses: actions/checkout@v2
-      - name: '(run)'
-        run: './gradlew test'
-  build:
-    runs-on: ubuntu-latest
-    name: 'Build'
-    steps:
-      - uses: actions/checkout@v2
-      - name: '(run)'
-        run: './gradlew build'
+    - name: '(run)'
+      run: './gradlew test'
+    - name: '(run)'
+      run: './gradlew build'
