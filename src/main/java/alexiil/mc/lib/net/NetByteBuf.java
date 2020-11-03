@@ -583,4 +583,20 @@ public class NetByteBuf extends PacketByteBuf {
     public String readString() {
         return readString(Short.MAX_VALUE);
     }
+
+    /** @return True if {@link #writeMarker(String)} actually does anything. */
+    public boolean isRecordingMarkers() {
+        return false;
+    }
+
+    /** Writes a "marker" for debug purposes. If debugging is disabled then this won't do anything. */
+    public void writeMarker(String id) {
+        // NO-OP
+    }
+
+    /** Reads a "marker" for debug purposes. If debugging is disabled then this won't do anything. Otherwise this will
+     * throw an exception if the marker ID's didn't match. */
+    public void readMarker(String id) throws InvalidInputDataException {
+        // NO-OP
+    }
 }

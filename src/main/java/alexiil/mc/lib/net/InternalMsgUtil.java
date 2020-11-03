@@ -7,10 +7,17 @@
  */
 package alexiil.mc.lib.net;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import io.netty.buffer.Unpooled;
 
+import alexiil.mc.lib.net.ActiveConnection.MultiTraceLines;
+import alexiil.mc.lib.net.ActiveConnection.SingleTraceLine;
+import alexiil.mc.lib.net.ActiveConnection.StringTraceSegment;
+import alexiil.mc.lib.net.ActiveConnection.StringTraceSeparator;
 import alexiil.mc.lib.net.CheckingNetByteBuf.InvalidNetTypeException;
 import alexiil.mc.lib.net.CheckingNetByteBuf.NetMethod;
 
@@ -87,6 +94,9 @@ public class InternalMsgUtil {
     // However the receiver might exit after (5) if it takes more than 4 seconds to receive the debug info
     // (or if debugging is disabled server-side)
 
+    /** Sent as part of {@link #ID_INTERNAL_DEBUG_STACKTRACE}. */
+    public static final int ID_INTERNAL_ALLOCATE_STACKTRACE_ELEMENT = 2;
+
     // /** The ID to inform the sender that the given number of packets have been read successfully, and so the sender
     // can
     // * drop any debug information they had about those packets. */
@@ -99,16 +109,17 @@ public class InternalMsgUtil {
     /** Debug data with type information for the next packet. */
     public static final int ID_INTERNAL_DEBUG_TYPES = 5;
 
-    // /** Debug data with the stacktrace for the writer. */
-    // public static final int ID_INTERNAL_DEBUG_STACKTRACE = 6;
+    /** Debug data with the stacktrace for the writer. */
+    public static final int ID_INTERNAL_DEBUG_STACKTRACE = 6;
 
     /** Sent by a receiver who wishes to receive {@link #ID_INTERNAL_DEBUG_TYPES}. */
     public static final int ID_INTERNAL_REQUEST_DEBUG_TYPES = 7;
 
-    // /** Sent by a receiver who wishes to receive {@link #ID_INTERNAL_DEBUG_STACKTRACE}. The sender should reply with
+    /** Sent by a receiver who wishes to receive {@link #ID_INTERNAL_DEBUG_STACKTRACE}. */
+    // The sender should reply with
     // * {@link #ID_INTERNAL_DEBUG_STACKTRACE_ENABLED} if it is enabled, along with the first index that can be
     // * requested. */
-    // public static final int ID_INTERNAL_REQUEST_STACKTRACES = 8;
+    public static final int ID_INTERNAL_REQUEST_STACKTRACES = 8;
 
     // /** Reply for {@link #ID_INTERNAL_REQUEST_STACKTRACES}, which also includes the index of the first packet that
     // can
@@ -119,6 +130,18 @@ public class InternalMsgUtil {
     // private static final int ID_INTERNAL_SPLIT_PACKET = 9;
 
     public static final int COUNT_HARDCODED_IDS = 9;
+
+    private static final Method STACK_TRACE_ELEMENT_MODULE_NAME;
+
+    static {
+        Method method = null;
+        try {
+            method = StackTraceElement.class.getMethod("getModuleName");
+        } catch (NoSuchMethodException e) {
+            // ignore
+        }
+        STACK_TRACE_ELEMENT_MODULE_NAME = method;
+    }
 
     /** @param buffer All of the data for a single packet. It must be complete! */
     public static void onReceive(ActiveConnection connection, NetByteBuf buffer) throws InvalidInputDataException {
@@ -195,6 +218,98 @@ public class InternalMsgUtil {
                 }
                 break;
             }
+            case ID_INTERNAL_ALLOCATE_STACKTRACE_ELEMENT: {
+                int count = buffer.readUnsignedByte() + 1;
+                for (int i = 0; i < count; i++) {
+                    int type = buffer.readFixedBits(2);
+                    switch (type) {
+                        case 0: {
+                            int newId = buffer.readVarUnsignedInt();
+                            int parentId = buffer.readVarUnsignedInt();
+                            StringTraceSeparator sep = buffer.readEnumConstant(StringTraceSeparator.class);
+                            String text = buffer.readString();
+                            StringTraceSegment parent = connection.receivedTraceStringSegments.get(parentId);
+                            if (parent == null && parentId != 0) {
+                                throw new InvalidInputDataException(
+                                    "Unknown parent ID for StringTraceSegment " + parent
+                                );
+                            }
+                            StringTraceSegment segment = new StringTraceSegment(newId, parent, sep, text);
+                            StringTraceSegment old = connection.receivedTraceStringSegments.put(newId, segment);
+                            if (old != null) {
+                                throw new InvalidInputDataException(
+                                    "Duplicate StringTraceSegment " + old + " vs added " + segment
+                                );
+                            }
+                            if (DEBUG) {
+                                LibNetworkStack.LOGGER.info(
+                                    connection + " Received new stacktrace string element " + newId + " as " + segment
+                                );
+                            }
+                            break;
+                        }
+                        case 1: {
+                            int newId = buffer.readVarUnsignedInt();
+                            int parentId = buffer.readVarUnsignedInt();
+                            int lineNumber = buffer.readVarUnsignedInt();
+                            StringTraceSegment parent = connection.receivedTraceStringSegments.get(parentId);
+                            if (parent == null) {
+                                throw new InvalidInputDataException(
+                                    "Unknown parent ID for SingleTraceLine " + parentId
+                                );
+                            }
+                            SingleTraceLine single = new SingleTraceLine(newId, parent, lineNumber);
+                            SingleTraceLine old = connection.receivedTraceLines.put(newId, single);
+                            if (old != null) {
+                                throw new InvalidInputDataException(
+                                    "Duplicate SingleTraceLine " + old + " vs added " + single
+                                );
+                            }
+                            if (DEBUG) {
+                                LibNetworkStack.LOGGER.info(
+                                    connection + " Received new stacktrace line element " + newId + " as " + single
+                                );
+                            }
+                            break;
+                        }
+                        case 2: {
+                            int newId = buffer.readVarUnsignedInt();
+                            int parentId = buffer.readVarUnsignedInt();
+                            int lineId = buffer.readVarUnsignedInt();
+                            MultiTraceLines parent = connection.receivedJoinedTraces.get(parentId);
+                            if (parent == null && parentId != 0) {
+                                throw new InvalidInputDataException(
+                                    "Unknown parent ID for MultiTraceLines " + parentId
+                                );
+                            }
+                            SingleTraceLine line = connection.receivedTraceLines.get(lineId);
+                            if (line == null) {
+                                throw new InvalidInputDataException("Unknown ID for SingleTraceLine " + lineId);
+                            }
+                            MultiTraceLines multi = new MultiTraceLines(newId, parent, line);
+                            MultiTraceLines old = connection.receivedJoinedTraces.put(newId, multi);
+                            if (old != null) {
+                                throw new InvalidInputDataException(
+                                    "Duplicate MultiTraceLines " + old + " vs added " + multi
+                                );
+                            }
+                            if (DEBUG) {
+                                LibNetworkStack.LOGGER.info(
+                                    connection + " Received new stacktrace multi element " + newId + " p " + parentId
+                                        + " as " + multi
+                                );
+                            }
+                            break;
+                        }
+                        default: {
+                            throw new InvalidInputDataException(
+                                "Unknown ID_INTERNAL_ALLOCATE_STACKTRACE_ELEMENT type " + type
+                            );
+                        }
+                    }
+                }
+                break;
+            }
             case ID_INTERNAL_DEBUG_TYPES: {
                 int bytes = buffer.readVarUnsignedInt();
                 int count = buffer.readVarUnsignedInt();
@@ -203,8 +318,30 @@ public class InternalMsgUtil {
                 connection.lastReceivedTypesCount = count;
                 break;
             }
+            case ID_INTERNAL_DEBUG_STACKTRACE: {
+                int stackId = buffer.readVarUnsignedInt();
+                connection.lastReceivedStacktrace = connection.receivedJoinedTraces.get(stackId);
+                if (connection.lastReceivedStacktrace == null) {
+                    throw new InvalidInputDataException("Unknown MultiTraceLines id " + stackId);
+                }
+                break;
+            }
             case ID_INTERNAL_REQUEST_DEBUG_TYPES: {
                 connection.sendTypes = true;
+                break;
+            }
+            case ID_INTERNAL_REQUEST_STACKTRACES: {
+                if (!connection.sendStacktraces) {
+                    connection.sendStacktraces = true;
+                    if (LibNetworkStack.CONFIG_RECORD_STACKTRACES) {
+                        LibNetworkStack.LOGGER.info(connection + " is now being sent stacktraces for every packet.");
+                    } else {
+                        LibNetworkStack.LOGGER.info(
+                            connection
+                                + " requested stacktraces, but debug.record_stacktraces is disabled so we won't send any."
+                        );
+                    }
+                }
                 break;
             }
             default: {
@@ -333,13 +470,17 @@ public class InternalMsgUtil {
                             } else {
                                 StringBuilder sb2 = new StringBuilder();
                                 try {
-                                    method.append(checkingBuffer, sb2);
+                                    method.appender.readAndAppend(checkingBuffer, sb2);
                                 } catch (Throwable t) {
                                     InvalidInputDataException e2 = new InvalidInputDataException(sb.toString(), e);
                                     e2.addSuppressed(t);
                                     throw e2;
                                 }
-                                sb.append("| ");
+                                if (method == NetMethod.CUSTOM_MARKER) {
+                                    sb.append("+-");
+                                } else {
+                                    sb.append("| ");
+                                }
                                 if (e instanceof InvalidNetTypeException && ((InvalidNetTypeException) e).index == i) {
                                     InvalidNetTypeException netType = (InvalidNetTypeException) e;
                                     int newLine = sb2.indexOf("\n");
@@ -359,7 +500,7 @@ public class InternalMsgUtil {
                                 sb.append("\n");
                                 if (
                                     payloadIndex.readerIndex == payload.readerIndex()
-                                    && payloadIndex.readerIndex < payload.writerIndex()
+                                        && payloadIndex.readerIndex < payload.writerIndex()
                                 ) {
                                     sb.append("+---(stopped reading here)\n");
                                 }
@@ -377,7 +518,19 @@ public class InternalMsgUtil {
                         sb.append("+---------\n");
                     }
 
-                    // TODO: Anything else?
+                    if (connection.lastReceivedStacktrace != null) {
+                        sb.append("\n+---------\n");
+                        sb.append("|Sender Stacktrace:\n|\n");
+                        boolean first = true;
+                        MultiTraceLines line = connection.lastReceivedStacktrace;
+                        do {
+                            sb.append(first ? "|     " : "|  at ");
+                            sb.append(line.line);
+                            sb.append("\n");
+                            first = false;
+                        } while ((line = line.parent) != null);
+                        sb.append("+---------\n");
+                    }
 
                     sb.append("\n");
                     throw new InvalidInputDataException(sb.toString(), e);
@@ -514,6 +667,162 @@ public class InternalMsgUtil {
         fullPayload.writeBytes(types, types.readerIndex(), bytes);
         connection.sendPacket(fullPayload, ID_INTERNAL_DEBUG_TYPES, null, 0);
         fullPayload.release();
+    }
+
+    static void sendNextStacktrace(ActiveConnection connection, Throwable t) {
+        class Gen {
+            NetByteBuf traceAllocationBuf = null;
+            int allocationCount = 0;
+
+            StringBuilder sb = new StringBuilder();
+            StringTraceSegment sParent = null;
+
+            void beginAllocation() {
+                if (traceAllocationBuf == null) {
+                    traceAllocationBuf = NetByteBuf.buffer();
+                    traceAllocationBuf.writeVarUnsignedInt(ID_INTERNAL_ALLOCATE_STACKTRACE_ELEMENT);
+                    traceAllocationBuf.writeByte(0);// count
+                }
+            }
+
+            void finishAllocation() {
+                allocationCount++;
+                if (allocationCount == 256) {
+                    traceAllocationBuf.setByte(1, 255);
+                    connection.sendPacket(traceAllocationBuf, ID_INTERNAL_ALLOCATE_STACKTRACE_ELEMENT, null, 0);
+                    traceAllocationBuf.release();
+                    traceAllocationBuf = null;
+                }
+            }
+
+            void finish() {
+                if (allocationCount > 0) {
+                    traceAllocationBuf.setByte(1, allocationCount - 1);
+                    connection.sendPacket(traceAllocationBuf, ID_INTERNAL_ALLOCATE_STACKTRACE_ELEMENT, null, 0);
+                    traceAllocationBuf.release();
+                    traceAllocationBuf = null;
+                }
+            }
+
+            void allocSegment(StringTraceSeparator sep) {
+                String text = sb.toString();
+                sb.replace(0, Integer.MAX_VALUE, "");
+                StringTraceSegment next = sParent.getCharChild(sep).get(text);
+                if (next == null) {
+                    beginAllocation();
+
+                    int newId = ++connection.allocatedStringSegemnts;
+                    next = new StringTraceSegment(newId, sParent, sep, text);
+
+                    // TYPES:
+                    // 0 = StringTraceSegment
+                    // 1 = SingleTraceLine
+                    // 2 = MultiTraceLines
+                    // 3 = (unused)
+                    traceAllocationBuf.writeFixedBits(0, 2);
+                    traceAllocationBuf.writeVarUnsignedInt(newId);
+                    traceAllocationBuf.writeVarUnsignedInt(sParent.id);
+                    traceAllocationBuf.writeEnumConstant(sep);
+                    traceAllocationBuf.writeString(text);
+
+                    finishAllocation();
+                }
+                sParent = next;
+            }
+
+            public StringTraceSeparator walk(String fullName, StringTraceSeparator lastSep) {
+                for (int j = 0; j < fullName.length(); j++) {
+                    char c = fullName.charAt(j);
+                    StringTraceSeparator sep = StringTraceSeparator.from(c);
+                    if (sep != null) {
+                        allocSegment(lastSep);
+                        lastSep = sep;
+                    } else {
+                        sb.append(c);
+                    }
+                }
+                if (sb.length() > 0) {
+                    allocSegment(lastSep);
+                }
+                return lastSep;
+            }
+        }
+        Gen gen = new Gen();
+
+        StackTraceElement[] trace = t.getStackTrace();
+
+        ActiveConnection.MultiTraceLines parent = null;
+
+        for (int i = trace.length - 1; i >= 0; i--) {
+            StackTraceElement ste = trace[i];
+            String moduleName = grabModuleName(ste);
+            String fqn = ste.getClassName();
+            String mth = ste.getMethodName();
+            int line = ste.getLineNumber();
+
+            gen.sParent = connection.rootTraceSegment;
+            StringTraceSeparator lastSep = StringTraceSeparator.DOT;
+
+            if (moduleName != null) {
+                lastSep = gen.walk(moduleName, lastSep);
+                lastSep = StringTraceSeparator.SLASH;
+            }
+            lastSep = gen.walk(fqn, lastSep);
+            gen.walk(mth, lastSep);
+
+            SingleTraceLine fullLine = gen.sParent.lineChildren.get(line);
+            if (fullLine == null) {
+                int newId = ++connection.allocatedTraceSegemnts;
+                fullLine = new SingleTraceLine(newId, gen.sParent, line);
+                gen.beginAllocation();
+
+                gen.traceAllocationBuf.writeFixedBits(1, 2);
+                gen.traceAllocationBuf.writeVarUnsignedInt(newId);
+                gen.traceAllocationBuf.writeVarUnsignedInt(gen.sParent.id);
+                gen.traceAllocationBuf.writeVarUnsignedInt(line);
+
+                gen.finishAllocation();
+            }
+
+            MultiTraceLines next = fullLine.children.get(parent);
+            if (next == null) {
+                int newId = ++connection.allocatedJoinedTraces;
+                next = new MultiTraceLines(newId, parent, fullLine);
+                gen.beginAllocation();
+
+                gen.traceAllocationBuf.writeFixedBits(2, 2);
+                gen.traceAllocationBuf.writeVarUnsignedInt(newId);
+                gen.traceAllocationBuf.writeVarUnsignedInt(parent == null ? 0 : parent.id);
+                gen.traceAllocationBuf.writeVarUnsignedInt(fullLine.id);
+
+                gen.finishAllocation();
+            }
+            parent = next;
+        }
+
+        gen.finish();
+
+        if (parent == null) {
+            throw new IllegalStateException("No stacktrace to send! " + Arrays.toString(trace));
+        }
+
+        NetByteBuf fullPayload = NetByteBuf.buffer(6);
+        fullPayload.writeVarUnsignedInt(ID_INTERNAL_DEBUG_STACKTRACE);
+        fullPayload.writeVarUnsignedInt(parent.id);
+        connection.sendPacket(fullPayload, ID_INTERNAL_DEBUG_STACKTRACE, null, 0);
+        fullPayload.release();
+    }
+
+    private static String grabModuleName(StackTraceElement ste) {
+        if (STACK_TRACE_ELEMENT_MODULE_NAME != null) {
+            try {
+                return (String) STACK_TRACE_ELEMENT_MODULE_NAME.invoke(ste);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new Error(e);
+            }
+        } else {
+            return null;
+        }
     }
 
     private static int allocAndSendNewId(ActiveConnection connection, TreeNetIdBase netId, NetIdPath path) {

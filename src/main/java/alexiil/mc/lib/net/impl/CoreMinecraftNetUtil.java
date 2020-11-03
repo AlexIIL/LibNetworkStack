@@ -173,6 +173,7 @@ public class CoreMinecraftNetUtil {
         ActiveClientConnection connection = currentClientConnection;
         if (connection == null || connection.getMinecraftContext() != ctx) {
             connection = new ActiveClientConnection((ClientPlayNetworkHandler) ctx);
+            connection.postConstruct();
             currentClientConnection = connection;
         }
         return connection;
@@ -191,8 +192,9 @@ public class CoreMinecraftNetUtil {
                 b.release();
             } catch (InvalidInputDataException e) {
                 e.printStackTrace();
-                ((ServerPlayNetworkHandler) ctx)
-                    .disconnect(new LiteralText("LibNetworkStack: read error (see server logs for more details)\n" + e));
+                ((ServerPlayNetworkHandler) ctx).disconnect(
+                    new LiteralText("LibNetworkStack: read error (see server logs for more details)\n" + e)
+                );
             }
         });
     }
@@ -212,7 +214,9 @@ public class CoreMinecraftNetUtil {
                     LibNetworkStack.LOGGER.info("Creating new server connection for " + ctx.getPlayer());
                 }
             }
-            return new ActiveServerConnection(networkHandler);
+            ActiveServerConnection connection = new ActiveServerConnection(networkHandler);
+            connection.postConstruct();
+            return connection;
         });
     }
 

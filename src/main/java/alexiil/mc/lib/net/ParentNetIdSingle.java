@@ -96,6 +96,10 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
         return new ParentNetIdExtractor<>(this, subName, targetClass, forward, backward);
     }
 
+    public ParentNetIdSingle<T> child(String name) {
+        return new ParentNetIdDuelDirect<>(this, name);
+    }
+
     /** @return The read value, or null if the parent couldn't be read.
      * @throws InvalidInputDataException if the byte buffer contained invalid data. */
     protected abstract T readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException;

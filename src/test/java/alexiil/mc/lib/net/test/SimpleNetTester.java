@@ -89,8 +89,7 @@ public class SimpleNetTester {
         = ANIMATED.idData("animate_move").setReadWrite(AnimationElement::read, AnimationElement::write);
 
     public static final ParentNetIdSingle<Tf2Player> TF2_PLAYER
-        = new ParentNetIdSingle<Tf2Player>(TF2_GAME, Tf2Player.class, "player", Byte.BYTES)
-        {
+        = new ParentNetIdSingle<Tf2Player>(TF2_GAME, Tf2Player.class, "player", Byte.BYTES) {
             @Override
             public Tf2Player readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 return players[buffer.readByte()];
@@ -111,8 +110,7 @@ public class SimpleNetTester {
     public static final NetIdDataK<Tf2Medic> SET_HEAL_TARGET = TF2_MEDIC.idData("set_heal_target");
 
     public static final ParentNetIdDuel<Tf2Player, Tf2Weapon> PLAYER_WEAPON
-        = new ParentNetIdDuel<Tf2Player, Tf2Weapon>(TF2_PLAYER, "held_weapon", Tf2Weapon.class, Byte.BYTES)
-        {
+        = new ParentNetIdDuel<Tf2Player, Tf2Weapon>(TF2_PLAYER, "held_weapon", Tf2Weapon.class, Byte.BYTES) {
             @Override
             protected void writeContext0(NetByteBuf buffer, IMsgWriteCtx ctx, Tf2Weapon weapon) {
                 buffer.writeByte(weapon.holder.weapons.indexOf(weapon));
@@ -151,8 +149,8 @@ public class SimpleNetTester {
             buffer.readString();
             buffer.readDouble();
             buffer.readBoolean();
-//            buffer.readDouble();
-//            buffer.readShort();
+            // buffer.readDouble();
+            // buffer.readShort();
         }
 
         public void write(NetByteBuf buffer, IMsgWriteCtx ctx) {
@@ -219,6 +217,9 @@ public class SimpleNetTester {
                 incomingSide1.add(data.copy());
             }
         };
+        side1.postConstruct();
+        side2.postConstruct();
+        process();
 
         SIGNAL_PING.setReceiver(ctx -> {
             System.out.println("Recv Ping on " + ctx.getConnection());
@@ -272,7 +273,12 @@ public class SimpleNetTester {
         SPAM_E_KEY.send(side1, players[0]);
         process();
         SET_HEAL_TARGET.send(side1, (Tf2Medic) players[0], (medic, buffer, ctx) -> {
+            buffer.writeMarker("target_player");
             MsgUtil.writeUTF(buffer, "Scout");
+            buffer.writeMarker("some_data");
+            buffer.writeBoolean(true);
+            buffer.writeVarInt(10);
+
         });
         process();
 

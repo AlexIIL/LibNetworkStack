@@ -16,12 +16,8 @@ import javax.annotation.Nullable;
 import net.minecraft.util.Identifier;
 
 import it.unimi.dsi.fastutil.Hash;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntLinkedOpenCustomHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
-public final class NetObjectCache<T> {
+public final class NetObjectCache<T> extends NetObjectCacheBase<T> {
 
     static final boolean DEBUG = LibNetworkStack.DEBUG || Boolean.getBoolean("libnetworkstack.cache.debug");
 
@@ -31,28 +27,12 @@ public final class NetObjectCache<T> {
         T read(ActiveConnection connection, NetByteBuf buffer) throws InvalidInputDataException;
     }
 
-    final class Data {
-        // TODO: Entry removal!
-        final Int2ObjectMap<T> idToObj = new Int2ObjectOpenHashMap<>();
-        final Object2IntMap<T> objToId = new Object2IntLinkedOpenCustomHashMap<>(equality);
-
-        Data(ActiveConnection connection) {
-            if (DEBUG) {
-                LibNetworkStack.LOGGER.info("[cache] " + connection + " " + netIdParent + " Created a new cache.");
-            }
-            objToId.defaultReturnValue(-1);
-        }
-    }
-
-    private final Hash.Strategy<T> equality;
-    private final IEntrySerialiser<T> serialiser;
     private final ParentNetId netIdParent;
     private final NetIdData netIdPutCacheEntry;
     private final NetIdData netIdRemoveCacheEntry;
 
     public NetObjectCache(ParentNetId parent, Hash.Strategy<T> equality, IEntrySerialiser<T> serialiser) {
-        this.equality = equality;
-        this.serialiser = serialiser;
+        super(equality, serialiser);
         this.netIdParent = parent;
         this.netIdPutCacheEntry = netIdParent.idData("put").setReceiver(this::receivePutCacheEntry);
         this.netIdRemoveCacheEntry = netIdParent.idData("remove").setReceiver(this::receiveRemoveCacheEntry);
@@ -64,8 +44,9 @@ public final class NetObjectCache<T> {
         netIdRemoveCacheEntry.notBuffered();
     }
 
-    public static <T> NetObjectCache<T> createMappedIdentifier(ParentNetId parent, Function<T, Identifier> nameGetter,
-        Function<Identifier, T> objectGetter) {
+    public static <T> NetObjectCache<T> createMappedIdentifier(
+        ParentNetId parent, Function<T, Identifier> nameGetter, Function<Identifier, T> objectGetter
+    ) {
         return new NetObjectCache<>(parent, new Hash.Strategy<T>() {
             @Override
             public int hashCode(T o) {
@@ -96,8 +77,9 @@ public final class NetObjectCache<T> {
         });
     }
 
-    public static <T> NetObjectCache<T> createMappedIdentifier(ParentNetId parent, Function<T, Identifier> nameGetter,
-        Map<Identifier, T> map) {
+    public static <T> NetObjectCache<T> createMappedIdentifier(
+        ParentNetId parent, Function<T, Identifier> nameGetter, Map<Identifier, T> map
+    ) {
         return createMappedIdentifier(parent, nameGetter, map::get);
     }
 
@@ -116,8 +98,12 @@ public final class NetObjectCache<T> {
 
     }
 
-    private NetObjectCache<T>.Data getData(ActiveConnection connection) {
-        return connection.getCacheData(this);
+    @Override
+    NetObjectCacheBase<T>.Data newData(ActiveConnection connection) {
+        if (DEBUG) {
+            LibNetworkStack.LOGGER.info("[cache] " + connection + " " + netIdParent + " Created a new cache.");
+        }
+        return super.newData(connection);
     }
 
     public int getId(ActiveConnection connection, T obj) {
@@ -128,9 +114,8 @@ public final class NetObjectCache<T> {
             data.objToId.put(obj, id);
             final int i = id;
             if (DEBUG) {
-                LibNetworkStack.LOGGER.info(
-                    "[cache] " + connection + " " + netIdParent + " Sending new ID " + i + " for object " + obj
-                );
+                LibNetworkStack.LOGGER
+                    .info("[cache] " + connection + " " + netIdParent + " Sending new ID " + i + " for object " + obj);
             }
             netIdPutCacheEntry.send(connection, (buffer, ctx) -> {
                 buffer.writeInt(i);

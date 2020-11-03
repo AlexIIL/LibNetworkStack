@@ -64,6 +64,9 @@ public final class NetIdData extends NetIdSeparate {
             if (checkingBuffer != null) {
                 InternalMsgUtil.sendNextTypes(connection, checkingBuffer.typeBuffer, checkingBuffer.getCountWrite());
             }
+            if (LibNetworkStack.CONFIG_RECORD_STACKTRACES && connection.sendStacktraces) {
+                InternalMsgUtil.sendNextStacktrace(connection, new Throwable().fillInStackTrace());
+            }
             InternalMsgUtil.send(connection, this, path, buffer);
         }
         buffer.release();

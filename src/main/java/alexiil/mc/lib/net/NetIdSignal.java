@@ -28,6 +28,9 @@ public final class NetIdSignal extends NetIdSeparate {
     /** Sends this signal over the specified connection */
     public void send(ActiveConnection connection) {
         validateSendingSide(connection);
+        if (LibNetworkStack.CONFIG_RECORD_STACKTRACES && connection.sendStacktraces) {
+            InternalMsgUtil.sendNextStacktrace(connection, new Throwable().fillInStackTrace());
+        }
         InternalMsgUtil.send(connection, this, path, NetByteBuf.EMPTY_BUFFER);
     }
 

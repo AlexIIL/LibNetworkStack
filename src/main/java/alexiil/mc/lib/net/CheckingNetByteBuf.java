@@ -48,7 +48,10 @@ public class CheckingNetByteBuf extends NetByteBuf {
         }
     }
 
-    /** A networking related method that wrote data to the buffer. Also markers for separating sections. */
+    /** A networking related method that wrote data to the buffer. Also markers for separating sections.
+     * <p>
+     * NOTE: The order of these is extremely important, and shouldn't change between releases. (In other words unused
+     * values should be replaced with "__UNUSED_1234" and new values must be appended). */
     public enum NetMethod {
         MARKER_ID((buf, to) -> to.append("marker: " + buf.typeBuffer.readVarUnsignedInt())),
         // Data Types
@@ -118,25 +121,32 @@ public class CheckingNetByteBuf extends NetByteBuf {
             to.append(buf.wrapped.readFixedBits(count));
         }),
         VAR_INT((buf, to) -> to.append("var_int: ").append(buf.wrapped.readVarInt())),
-        VAR_LONG((buf, to) -> to.append("var_long: ").append(buf.wrapped.readVarLong()));
+        VAR_LONG((buf, to) -> to.append("var_long: ").append(buf.wrapped.readVarLong())),
+
+        /** Not a data type. Instead this is used to record positional information by the sender via
+         * {@link NetByteBuf#writeMarker(String)} */
+        CUSTOM_MARKER((buf, to) -> to.append("- \"").append(buf.wrapped.readString()).append("\"")),
+
+        __UNUSED__1(null),
+        __UNUSED__2(null),
+        __UNUSED__3(null),
+        __UNUSED__4(null),
+
+        /* Due to enums being written out using the exact number of bits required (in this case 5, as there were 27
+         * types before CUSTOM_MARKER was added) we can't use any more without introducing a breaking change. In which
+         * case we'll have to either (a) break on LNS update (which might be fine) or (b) use some complex system
+         * instead. Not fun. */
+        ;
 
         @FunctionalInterface
         interface NetMethodAppender {
             void readAndAppend(CheckingNetByteBuf buffer, StringBuilder to);
         }
 
-        private final NetMethodAppender appender;
+        public final NetMethodAppender appender;
 
         private NetMethod(NetMethodAppender appender) {
             this.appender = appender;
-        }
-
-        public static void readAndAppend(CheckingNetByteBuf buffer, StringBuilder to) {
-            buffer.typeBuffer.readEnumConstant(NetMethod.class).append(buffer, to);
-        }
-
-        public void append(CheckingNetByteBuf buffer, StringBuilder to) {
-            appender.readAndAppend(buffer, to);
         }
     }
 
@@ -837,5 +847,28 @@ public class CheckingNetByteBuf extends NetByteBuf {
         write(NetMethod.VAR_LONG);
         wrapped.writeVarLong(lval);
         return this;
+    }
+
+    @Override
+    public boolean isRecordingMarkers() {
+        return true;
+    }
+
+    @Override
+    public void readMarker(String id) throws InvalidInputDataException {
+        validateRead(NetMethod.CUSTOM_MARKER);
+        String read = wrapped.readString();
+        recordRead(NetMethod.CUSTOM_MARKER);
+        if (!id.equals(read)) {
+            throw new InvalidInputDataException(
+                "Marker ID didn't match: expected '" + id + "', but read '" + read + "'"
+            );
+        }
+    }
+
+    @Override
+    public void writeMarker(String id) {
+        write(NetMethod.CUSTOM_MARKER);
+        wrapped.writeString(id);
     }
 }

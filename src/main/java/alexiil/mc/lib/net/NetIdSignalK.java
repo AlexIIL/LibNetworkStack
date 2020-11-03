@@ -102,6 +102,9 @@ public final class NetIdSignalK<T> extends NetIdTyped<T> {
         if (bufferTypes != null) {
             InternalMsgUtil.sendNextTypes(connection, bufferTypes, checkingBuffer.getCountWrite());
         }
+        if (LibNetworkStack.CONFIG_RECORD_STACKTRACES && connection.sendStacktraces) {
+            InternalMsgUtil.sendNextStacktrace(connection, new Throwable().fillInStackTrace());
+        }
         InternalMsgUtil.send(connection, this, resolvedPath, buffer);
         buffer.release();
     }

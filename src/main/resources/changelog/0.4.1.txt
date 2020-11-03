@@ -1,0 +1,11 @@
+Changes:
+
+* Removed the "debug.all" option and replaced it with "debug.log".
+    * This no longer forces every other debug option to be turned on when set to true.
+* Added a debug option to print the stacktrace of the sender when reading throws an exception.
+    * Unlike types this must be enabled on both sides for it to work.
+    * This is controlled with the option "debug.record_stacktraces"
+* Added a simpler cache type (NetObjectCacheSimple)
+    * Unlike the full cache, this writes cache data out in-place, rather than requiring a separate network ID.
+    * While this makes it simpler to create caches this writes an extra boolean.
+* Added markers, which are shown in the debug log if "debug.record_types" is enabled.
