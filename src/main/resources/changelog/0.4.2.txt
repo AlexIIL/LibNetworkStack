@@ -1,0 +1,3 @@
+Bug fixes:
+
+* Fixed debug.record_stacktraces being *very* buggy when it's sent alongside other packets.
