@@ -19,12 +19,12 @@ jobs:
     - uses: actions/checkout@v2
     - id: tasks
       name: 'Setup'
-      run: |
-       ./gradlew tasks
-       not_a_real_command
+      run: './gradlew tasks'
     - id: 'license'
       name: 'Check License'
-      run: './gradlew checkLicense'
+      run: |
+        ./gradlew checkLicense
+        not_a_real_command
     - id: 'test'
       name: 'Test'
       run: './gradlew test'
@@ -34,10 +34,22 @@ jobs:
   output_tasks:
     runs-on: ubuntu-latest
     needs: prep
+    if: always()
     steps:
     - name: 'Check Tasks'
       run: |
         echo "${{ needs.prep.outputs.did_tasks }}"
         if [[ ${{ needs.prep.outputs.did_tasks }} != "success" ]]; then
+        exit 1
+        fi
+  output_license:
+    runs-on: ubuntu-latest
+    needs: prep
+    if: always()
+    steps:
+    - name: 'Check License'
+      run: |
+        echo "${{ needs.prep.outputs.did_license }}"
+        if [[ ${{ needs.prep.outputs.did_license }} != "success" ]]; then
         exit 1
         fi
