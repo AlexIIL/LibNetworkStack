@@ -97,7 +97,7 @@ public abstract class ActiveConnection {
     /** @return The Fabric API {@link PacketContext} for this connection. Throws an error if this is not a
      *         {@link ActiveMinecraftConnection}. (Although mods will *never* need to worry about that unless they
      *         create their own netty layer for a completely different connection).
-     * @deprecated Replaced by the specific methods {@link #getPlayer()} and {@link #getEnvironment()}. */
+     * @deprecated Replaced by the specific methods {@link #getPlayer()} and {@link #getNetSide()}. */
     @Deprecated
     public abstract PacketContext getMinecraftContext();
 
@@ -105,8 +105,8 @@ public abstract class ActiveConnection {
      *         both when writing client to server packets, and when reading packets sent from the server. (And SERVER
      *         both when writing server to client packets, and when reading client to server packets). Other connection
      *         types might throw an exception if they reuse LNS for a non-standard minecraft connection. */
-    public EnvType getEnvironment() {
-        return getMinecraftContext().getPacketEnvironment();
+    public EnumNetSide getNetSide() {
+        return getMinecraftContext().getPacketEnvironment() == EnvType.CLIENT ? EnumNetSide.CLIENT : EnumNetSide.SERVER;
     }
 
     /** @return The Minecraft {@link PlayerEntity} for this connection. Throws an error if this is not a

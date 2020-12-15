@@ -57,7 +57,7 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     private int theirCustomId = NET_ID_NOT_OPTIMISED;
     private boolean hasSentCustomId;
 
-    /** Replaced by the specific methods ({@link #getPlayer()}, {@link #getEnvironment()}, and ) */
+    /** Replaced by the specific methods ({@link #getPlayer()}, {@link #getNetSide()}, and ) */
     @Deprecated
     public final PacketContext ctx;
 
@@ -75,6 +75,7 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     /** @return The "side" of this connection. This will be {@link EnumNetSide#CLIENT} both when writing client to
      *         server packets, and when reading packets sent from the server. (And {@link EnumNetSide#SERVER} both when
      *         writing server to client packets, and when reading client to server packets). */
+    @Override
     public abstract EnumNetSide getNetSide();
 
     @Override
