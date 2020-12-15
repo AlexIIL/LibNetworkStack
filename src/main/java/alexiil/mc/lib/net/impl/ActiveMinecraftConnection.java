@@ -9,6 +9,7 @@ package alexiil.mc.lib.net.impl;
 
 import net.fabricmc.fabric.api.network.PacketContext;
 
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.Packet;
 import net.minecraft.util.Identifier;
 
@@ -56,6 +57,8 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     private int theirCustomId = NET_ID_NOT_OPTIMISED;
     private boolean hasSentCustomId;
 
+    /** Replaced by the specific methods ({@link #getPlayer()}, {@link #getEnvironment()}, and ) */
+    @Deprecated
     public final PacketContext ctx;
 
     public ActiveMinecraftConnection(PacketContext ctx) {
@@ -64,9 +67,18 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     }
 
     @Override
+    @Deprecated
     public PacketContext getMinecraftContext() {
         return ctx;
     }
+
+    /** @return The "side" of this connection. This will be {@link EnumNetSide#CLIENT} both when writing client to
+     *         server packets, and when reading packets sent from the server. (And {@link EnumNetSide#SERVER} both when
+     *         writing server to client packets, and when reading client to server packets). */
+    public abstract EnumNetSide getNetSide();
+
+    @Override
+    public abstract PlayerEntity getPlayer();
 
     @Override
     public final void sendRawData0(NetByteBuf data) {
@@ -105,6 +117,4 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     protected abstract Packet<?> toCompactPacket(int receiverId, NetByteBuf data);
 
     protected abstract void sendPacket(Packet<?> packet);
-
-    public abstract EnumNetSide getNetSide();
 }

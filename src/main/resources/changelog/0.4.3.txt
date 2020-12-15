@@ -1,0 +1,4 @@
+Bug fixes:
+
+* Fixed a crash with fabric networking v1.
+* This deprecates all usage of "PacketContext" in ActiveConnections, adding getPlayer() instead.

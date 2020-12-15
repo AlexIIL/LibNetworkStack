@@ -9,7 +9,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 archivesBaseName = "LibNetworkStack"
-version = "0.4.2"
+version = "0.4.3-pre.2"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
@@ -20,12 +20,12 @@ minecraft {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:1.16-pre4"
-    mappings "net.fabricmc:yarn:1.16-pre4+build.1:v2"
-    modImplementation "net.fabricmc:fabric-loader:0.8.7+build.201"
+    minecraft "com.mojang:minecraft:1.16.4"
+    mappings "net.fabricmc:yarn:1.16.4+build.7:v2"
+    modImplementation "net.fabricmc:fabric-loader:0.10.8"
 
     //Fabric api
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.12.0+build.360-1.16"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.28.1+1.16"
 
     // Misc
     compile "com.google.code.findbugs:jsr305:3.0.1"

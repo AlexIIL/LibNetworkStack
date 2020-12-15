@@ -52,7 +52,7 @@ public class CompactDataPacketToClient implements IPacketCustomId<ClientPlayNetw
     @Override
     public void apply(ClientPlayNetworkHandler netHandler) {
         NetByteBuf buffer = NetByteBuf.asNetByteBuf(Unpooled.wrappedBuffer(payload));
-        CoreMinecraftNetUtil.onClientReceivePacket((PacketContext) netHandler, buffer);
+        CoreMinecraftNetUtil.onClientReceivePacket__old((PacketContext) netHandler, buffer);
         buffer.release();
     }
 }
