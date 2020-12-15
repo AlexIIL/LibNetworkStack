@@ -36,4 +36,6 @@ jobs:
     - name: 'Check Tasks'
       run: |
         echo "${{ needs.prep.outputs.did_tasks }}"
-        if [[ ${{ needs.prep.outputs.did_tasks }} != "success" ]]; then; exit 1; fi
+        if [[ ${{ needs.prep.outputs.did_tasks }} != "success" ]] then
+        exit 1
+        fi
