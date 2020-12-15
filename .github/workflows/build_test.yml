@@ -1,0 +1,27 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the 0.4.x-1.16.x branch
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: '**'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  all:
+    runs-on: ubuntu-latest
+    name: 'License, Test, Build'
+    steps:
+    - uses: actions/checkout@v2
+    - name: 'Setup'
+      run: './gradlew tasks'
+    - name: 'Check License'
+      run: './gradlew checkLicense'
+    - name: 'Test'
+      run: './gradlew test'
+    - name: 'Build'
+      run: './gradlew build'
