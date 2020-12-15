@@ -12,16 +12,31 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  all:
+  prep:
     runs-on: ubuntu-latest
-    name: 'License, Test, Build'
+    name: 'Prepare'
+    outputs:
+      did_tasks: ${{ steps.tasks.conclusion }}
+      did_license: ${{ steps.license.conclusion }}
+      did_test: ${{ steps.test.conclusion }}
+      did_build: ${{ steps.build.conclusion }}
     steps:
+    - id: tasks
     - uses: actions/checkout@v2
     - name: 'Setup'
-      run: './gradlew tasks'
+      run: |
+        './gradlew tasks'
     - name: 'Check License'
       run: './gradlew checkLicense'
     - name: 'Test'
       run: './gradlew test'
     - name: 'Build'
       run: './gradlew build'
+  output_tasks:
+    runs-on: ubuntu-latest
+    needs: prep
+    steps:
+    - name: 'Check Tasks'
+      run: |
+        echo "${{ needs.prep.outputs.did_tasks }}"
+        if [[ ${{ needs.prep.outputs.did_tasks }} -eq ]]; then; exit 1; fi
