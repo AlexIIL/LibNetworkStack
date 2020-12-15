@@ -19,7 +19,9 @@ jobs:
     - uses: actions/checkout@v2
     - id: tasks
       name: 'Setup'
-      run: './gradlew tasks'
+      run: |
+       './gradlew tasks'
+       not_a_real_command
     - id: 'license'
       name: 'Check License'
       run: './gradlew checkLicense'
