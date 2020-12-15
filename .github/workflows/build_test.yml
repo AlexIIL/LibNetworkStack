@@ -20,7 +20,7 @@ jobs:
     - id: tasks
       name: 'Setup'
       run: |
-       './gradlew tasks'
+       ./gradlew tasks
        not_a_real_command
     - id: 'license'
       name: 'Check License'
