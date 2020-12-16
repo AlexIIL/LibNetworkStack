@@ -13,6 +13,7 @@ jobs:
       did_tasks: ${{ steps.tasks.conclusion }}
       did_license: ${{ steps.license.conclusion }}
       did_test: ${{ steps.test.conclusion }}
+      did_javadoc: ${{ steps.javadoc.conclusion }}
       did_build: ${{ steps.build.conclusion }}
     steps:
     - uses: actions/checkout@v2
@@ -25,6 +26,9 @@ jobs:
     - id: 'test'
       name: 'Test'
       run: './gradlew test'
+    - id: 'javadoc'
+      name: 'Javadoc'
+      run: './gradlew javadoc'
     - id: 'build'
       name: 'Build'
       run: './gradlew build'
@@ -61,9 +65,20 @@ jobs:
         if [[ ${{ needs.prep.outputs.did_test }} != "success" ]]; then
         exit 1
         fi
-  output_build:
+  output_javadoc:
     runs-on: ubuntu-latest
     needs: [prep, output_test]
+    if: needs.output_test.result == 'success'
+    steps:
+    - name: 'Check Javadocs'
+      run: |
+        echo "${{ needs.prep.outputs.did_javadoc }}"
+        if [[ ${{ needs.prep.outputs.did_javadoc }} != "success" ]]; then
+        exit 1
+        fi
+  output_build:
+    runs-on: ubuntu-latest
+    needs: [prep, output_javadoc]
     if: needs.output_test.result == 'success'
     steps:
     - name: 'Check Build'
