@@ -17,7 +17,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 
 /** Debug variant of {@link NetByteBuf} that writes the method calls to ensure that it's a perfect mirror. This uses a
- * separate data buffer for reading & writing types, which can be null if no type data is present. */
+ * separate data buffer for reading &amp; writing types, which can be null if no type data is present. */
 public class CheckingNetByteBuf extends NetByteBuf {
 
     /** Unchecked exception that's thrown when one of the types doesn't match. */

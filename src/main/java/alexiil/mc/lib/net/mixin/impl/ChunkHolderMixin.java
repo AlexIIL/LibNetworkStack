@@ -24,7 +24,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 
-import alexiil.mc.lib.net.mixin.api.IBlockEntityInitialData;
+import alexiil.mc.lib.net.impl.BlockEntityInitialData;
 
 @Mixin(ChunkHolder.class)
 public abstract class ChunkHolderMixin {
@@ -43,11 +43,11 @@ public abstract class ChunkHolderMixin {
         method = "sendBlockEntityUpdatePacket(" + WORLD + BLOCK_POS + ")V", locals = LocalCapture.CAPTURE_FAILHARD)
     void sendCustomUpdatePacket(World world, BlockPos pos, CallbackInfo ci, BlockEntity be) {
 
-        if (be instanceof IBlockEntityInitialData) {
+        if (be instanceof BlockEntityInitialData) {
             List<ServerPlayerEntity> players
                 = playersWatchingChunkProvider.getPlayersWatchingChunk(this.pos, false).collect(Collectors.toList());
             for (ServerPlayerEntity player : players) {
-                ((IBlockEntityInitialData) be).sendInitialData(player);
+                ((BlockEntityInitialData) be).sendInitialData(player);
             }
         }
     }

@@ -18,6 +18,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ThreadedAnvilChunkStorage;
 import net.minecraft.world.chunk.WorldChunk;
 
+import alexiil.mc.lib.net.impl.BlockEntityInitialData;
 import alexiil.mc.lib.net.mixin.api.IBlockEntityInitialData;
 
 @Mixin(ThreadedAnvilChunkStorage.class)
@@ -27,8 +28,8 @@ public abstract class ThreadedAnvilChunkStorageMixin {
         + "[Lnet/minecraft/network/Packet;Lnet/minecraft/world/chunk/WorldChunk;)V")
     private void postSendPackets(ServerPlayerEntity player, Packet<?>[] packets, WorldChunk chunk, CallbackInfo ci) {
         for (BlockEntity be : chunk.getBlockEntities().values()) {
-            if (be instanceof IBlockEntityInitialData) {
-                ((IBlockEntityInitialData) be).sendInitialData(player);
+            if (be instanceof BlockEntityInitialData) {
+                ((BlockEntityInitialData) be).sendInitialData(player);
             }
         }
     }

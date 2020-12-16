@@ -115,8 +115,7 @@ public abstract class ActiveConnection {
         return getMinecraftContext().getPlayer();
     }
 
-    /** @param data
-     * @param packetId The packet ID that has been written out to the first int of the given buffer.
+    /** @param packetId The packet ID that has been written out to the first int of the given buffer.
      * @param netId The {@link NetIdBase} that is being written out. Will be null if the packet ID is one of the
      *            internal packets.
      * @param priority The priority for the packet. Will be either 0 or a negative number. */

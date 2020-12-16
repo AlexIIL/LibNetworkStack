@@ -1,3 +1,7 @@
+Changes:
+
+* Added "impl.BlockEntityInitialData", which is the new version of the now-deprecated "mixin.api.IBlockEntityInitialData".
+
 Bug fixes:
 
 * Fixed a crash with fabric networking v1.

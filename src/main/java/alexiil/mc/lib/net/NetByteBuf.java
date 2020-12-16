@@ -280,7 +280,7 @@ public class NetByteBuf extends PacketByteBuf {
         return this;
     }
 
-    /** @param length
+    /** @param length The number of bits to read.
      * @return The read bits, compacted into an int.
      * @throws IllegalArgumentException if the length argument was less than 1 or greater than 32. */
     public int readFixedBits(int length) throws IllegalArgumentException {
@@ -556,7 +556,7 @@ public class NetByteBuf extends PacketByteBuf {
     /** Reads in a string, and tries to parse it as an {@link Identifier}. If the string is a valid identifier then it
      * is returned, however if it isn't then {@link InvalidInputDataException} is thrown.
      * 
-     * @throws InvalidInputDataException */
+     * @throws InvalidInputDataException if the read string wasn't a valid {@link Identifier}. */
     public Identifier readIdentifierSafe() throws InvalidInputDataException {
         try {
             return super.readIdentifier();

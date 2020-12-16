@@ -31,10 +31,7 @@ public abstract class ParentNetIdSingle<T> extends ParentNetIdBase {
         this.clazz = clazz;
     }
 
-    /** @param parent The parent.
-     * @param clazz The type of the object to be written and read.
-     * @param name The name. (See
-     * @param thisLength */
+    /** @param clazz The type of the object to be written and read. */
     public ParentNetIdSingle(ParentNetId parent, Class<T> clazz, String name, int thisLength) {
         super(parent, name, thisLength);
         this.clazz = clazz;

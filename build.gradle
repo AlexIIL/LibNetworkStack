@@ -41,7 +41,8 @@ compileJava {
 
 javadoc {
     destinationDir file(new File(System.getenv("JAVADOC_DIR") ?: "$projectDir/build/javadoc", "libnetworkstack/$version"));
-    exclude "alexiil/mc/lib/net/mixin/impl";
+    exclude "alexiil/mc/lib/net/mixin";
+    options.optionFiles << file('javadoc.options');
 }
 
 build.dependsOn(javadoc);
