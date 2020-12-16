@@ -21,7 +21,7 @@ jobs:
       run: './gradlew tasks'
     - id: 'license'
       name: 'Check License'
-      run: './gradlew checkLicense'
+      run: './graadledlew checkLicense'
     - id: 'test'
       name: 'Test'
       run: './gradlew test'
