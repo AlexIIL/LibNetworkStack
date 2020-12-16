@@ -52,3 +52,25 @@ jobs:
         if [[ ${{ needs.prep.outputs.did_license }} != "success" ]]; then
         exit 1
         fi
+  output_test:
+    runs-on: ubuntu-latest
+    needs: prep
+    if: always()
+    steps:
+    - name: 'Check Test'
+      run: |
+        echo "${{ needs.prep.outputs.did_test }}"
+        if [[ ${{ needs.prep.outputs.did_test }} != "success" ]]; then
+        exit 1
+        fi
+  output_build:
+    runs-on: ubuntu-latest
+    needs: prep
+    if: always()
+    steps:
+    - name: 'Check Build'
+      run: |
+        echo "${{ needs.prep.outputs.did_build }}"
+        if [[ ${{ needs.prep.outputs.did_build }} != "success" ]]; then
+        exit 1
+        fi
