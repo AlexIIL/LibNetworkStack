@@ -9,7 +9,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 archivesBaseName = "LibNetworkStack"
-version = "0.4.3-pre.3"
+version = "0.4.3"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
@@ -38,6 +38,13 @@ compileJava {
     options.compilerArgs << "-Xlint:all"
     options.compilerArgs << "-Xdiags:verbose"
 }
+
+javadoc {
+    destinationDir file(new File(System.getenv("JAVADOC_DIR") ?: "$projectDir/build/javadoc", "libnetworkstack/$version"));
+    exclude "alexiil/mc/lib/net/mixin/impl";
+}
+
+build.dependsOn(javadoc);
 
 // ensure that the encoding is set to UTF-8, no matter what the system default is
 // this fixes some edge cases with special characters not displaying correctly
