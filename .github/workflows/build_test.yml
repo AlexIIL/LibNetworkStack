@@ -46,7 +46,7 @@ jobs:
   output_license:
     runs-on: ubuntu-latest
     needs: [prep, output_tasks]
-    if: needs.output_tasks.result == 'success'
+    if: always()
     steps:
     - name: 'Check License'
       run: |
@@ -57,7 +57,7 @@ jobs:
   output_test:
     runs-on: ubuntu-latest
     needs: [prep, output_license]
-    if: needs.output_license.result == 'success'
+    if: always()
     steps:
     - name: 'Check Test'
       run: |
@@ -68,7 +68,7 @@ jobs:
   output_javadoc:
     runs-on: ubuntu-latest
     needs: [prep, output_test]
-    if: needs.output_test.result == 'success'
+    if: always()
     steps:
     - name: 'Check Javadocs'
       run: |
@@ -79,7 +79,7 @@ jobs:
   output_build:
     runs-on: ubuntu-latest
     needs: [prep, output_javadoc]
-    if: needs.output_javadoc.result == 'success'
+    if: always()
     steps:
     - name: 'Check Build'
       run: |
