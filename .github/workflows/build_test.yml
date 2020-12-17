@@ -8,7 +8,7 @@ on:
 jobs:
   prep:
     runs-on: ubuntu-latest
-    name: 'Prepare'
+    name: 'Work'
     outputs:
       did_tasks: ${{ steps.tasks.conclusion }}
       did_license: ${{ steps.license.conclusion }}
@@ -33,6 +33,7 @@ jobs:
       name: 'Build'
       run: './gradlew build'
   output_tasks:
+    name: 'Check Buildscript'
     runs-on: ubuntu-latest
     needs: prep
     if: always()
@@ -41,9 +42,11 @@ jobs:
       run: |
         echo "${{ needs.prep.outputs.did_tasks }}"
         if [[ ${{ needs.prep.outputs.did_tasks }} != "success" ]]; then
-        exit 1
+          echo "Look at the 'Work' job to see what went wrong!"
+          exit 1
         fi
   output_license:
+    name: 'Check License'
     runs-on: ubuntu-latest
     needs: [prep, output_tasks]
     if: always()
@@ -52,9 +55,11 @@ jobs:
       run: |
         echo "${{ needs.prep.outputs.did_license }}"
         if [[ ${{ needs.prep.outputs.did_license }} != "success" ]]; then
-        exit 1
+          echo "Look at the 'Work' job to see what went wrong!"
+          exit 1
         fi
   output_test:
+    name: 'Run Tests'
     runs-on: ubuntu-latest
     needs: [prep, output_license]
     if: always()
@@ -63,9 +68,11 @@ jobs:
       run: |
         echo "${{ needs.prep.outputs.did_test }}"
         if [[ ${{ needs.prep.outputs.did_test }} != "success" ]]; then
-        exit 1
+          echo "Look at the 'Work' job to see what went wrong!"
+          exit 1
         fi
   output_javadoc:
+    name: 'Generate Javadoc'
     runs-on: ubuntu-latest
     needs: [prep, output_test]
     if: always()
@@ -74,9 +81,11 @@ jobs:
       run: |
         echo "${{ needs.prep.outputs.did_javadoc }}"
         if [[ ${{ needs.prep.outputs.did_javadoc }} != "success" ]]; then
-        exit 1
+          echo "Look at the 'Work' job to see what went wrong!"
+          exit 1
         fi
   output_build:
+    name: 'Build Jars'
     runs-on: ubuntu-latest
     needs: [prep, output_javadoc]
     if: always()
@@ -85,5 +94,6 @@ jobs:
       run: |
         echo "${{ needs.prep.outputs.did_build }}"
         if [[ ${{ needs.prep.outputs.did_build }} != "success" ]]; then
-        exit 1
+          echo "Look at the 'Work' job to see what went wrong!"
+          exit 1
         fi
