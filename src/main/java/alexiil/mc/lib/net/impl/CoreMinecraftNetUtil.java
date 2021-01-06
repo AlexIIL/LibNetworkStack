@@ -122,7 +122,7 @@ public class CoreMinecraftNetUtil {
         if (PacketContext.class.isAssignableFrom(ServerPlayNetworkHandler.class)) {
             // Fabric API: Networking V0
             ServerSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
-                onServerReceivePacket__old(ctx, NetByteBuf.asNetByteBuf(buffer));
+                onServerReceivePacket((ServerPlayNetworkHandler) ctx, NetByteBuf.asNetByteBuf(buffer));
             });
         } else {
             // Fabric API: Networking V1
@@ -173,7 +173,7 @@ public class CoreMinecraftNetUtil {
         if (PacketContext.class.isAssignableFrom(ClientPlayNetworkHandler.class)) {
             // Fabric API: Networking v0
             ClientSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
-                onClientReceivePacket__old(ctx, NetByteBuf.asNetByteBuf(buffer));
+                onClientReceivePacket((ClientPlayNetworkHandler) ctx, NetByteBuf.asNetByteBuf(buffer));
             });
         } else {
             // Fabric API: Networking V1
@@ -207,17 +207,16 @@ public class CoreMinecraftNetUtil {
         ClientTickCallback.EVENT.register(client -> onClientTick());
     }
 
-    static void onClientReceivePacket__old(PacketContext ctx, NetByteBuf buffer) {
-        ActiveClientConnection connection = getOrCreateClientConnection((ClientPlayNetworkHandler) ctx);
+    static void onClientReceivePacket(ClientPlayNetworkHandler ctx, NetByteBuf buffer) {
+        ActiveClientConnection connection = getOrCreateClientConnection(ctx);
         NetByteBuf b = buffer.copy();
-        ctx.getTaskQueue().execute(() -> {
+        MinecraftClient.getInstance().execute(() -> {
             try {
                 connection.onReceiveRawData(b);
                 b.release();
             } catch (InvalidInputDataException e) {
                 e.printStackTrace();
-                ((ClientPlayNetworkHandler) ctx).getConnection()
-                    .disconnect(new LiteralText("LibNetworkStack: read error (see logs for details)"));
+                ctx.getConnection().disconnect(new LiteralText("LibNetworkStack: read error (see logs for details)"));
             }
         });
     }
@@ -248,22 +247,20 @@ public class CoreMinecraftNetUtil {
         return connection;
     }
 
-    static void onServerReceivePacket__old(PacketContext ctx, NetByteBuf buffer) {
-        ActiveServerConnection connection = getServerConnection((ServerPlayNetworkHandler) ctx);
+    static void onServerReceivePacket(ServerPlayNetworkHandler ctx, NetByteBuf buffer) {
+        ActiveServerConnection connection = getServerConnection(ctx);
         if (connection == null) {
             return;
         }
 
         NetByteBuf b = buffer.copy();
-        ctx.getTaskQueue().execute(() -> {
+        ctx.player.server.execute(() -> {
             try {
                 connection.onReceiveRawData(b);
                 b.release();
             } catch (InvalidInputDataException e) {
                 e.printStackTrace();
-                ((ServerPlayNetworkHandler) ctx).disconnect(
-                    new LiteralText("LibNetworkStack: read error (see server logs for more details)\n" + e)
-                );
+                ctx.disconnect(new LiteralText("LibNetworkStack: read error (see server logs for more details)\n" + e));
             }
         });
     }

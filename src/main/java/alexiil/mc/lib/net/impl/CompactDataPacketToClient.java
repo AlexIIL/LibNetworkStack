@@ -11,8 +11,6 @@ import java.io.IOException;
 
 import io.netty.buffer.Unpooled;
 
-import net.fabricmc.fabric.api.network.PacketContext;
-
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.PacketByteBuf;
 
@@ -52,7 +50,7 @@ public class CompactDataPacketToClient implements IPacketCustomId<ClientPlayNetw
     @Override
     public void apply(ClientPlayNetworkHandler netHandler) {
         NetByteBuf buffer = NetByteBuf.asNetByteBuf(Unpooled.wrappedBuffer(payload));
-        CoreMinecraftNetUtil.onClientReceivePacket__old((PacketContext) netHandler, buffer);
+        CoreMinecraftNetUtil.onClientReceivePacket(netHandler, buffer);
         buffer.release();
     }
 }

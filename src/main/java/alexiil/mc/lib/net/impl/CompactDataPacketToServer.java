@@ -52,7 +52,7 @@ public class CompactDataPacketToServer implements IPacketCustomId<ServerPlayNetw
     @Override
     public void apply(ServerPlayNetworkHandler netHandler) {
         NetByteBuf buffer = NetByteBuf.asNetByteBuf(Unpooled.wrappedBuffer(payload));
-        CoreMinecraftNetUtil.onServerReceivePacket__old((PacketContext) netHandler, buffer);
+        CoreMinecraftNetUtil.onServerReceivePacket(netHandler, buffer);
         buffer.release();
     }
 }
