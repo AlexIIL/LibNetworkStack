@@ -1,0 +1,3 @@
+Bug fixes:
+
+* Fixed a second crash with fabric networking v1.
