@@ -39,7 +39,7 @@ public abstract class ChunkHolderMixin {
     @Shadow
     private ChunkPos pos;
 
-    @Inject(at = @At(value = "INVOKE_ASSIGN", target = WORLD + "getBlockEntity(" + BLOCK_POS + ")" + BLOCK_ENTITY),
+    @Inject(at = @At("RETURN"),
         method = "sendBlockEntityUpdatePacket(" + WORLD + BLOCK_POS + ")V", locals = LocalCapture.CAPTURE_FAILHARD)
     void sendCustomUpdatePacket(World world, BlockPos pos, CallbackInfo ci, BlockEntity be) {
 
