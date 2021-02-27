@@ -1,0 +1,3 @@
+Bug fixes:
+
+* [#5] Fixed sometimes sending packet data too early.
