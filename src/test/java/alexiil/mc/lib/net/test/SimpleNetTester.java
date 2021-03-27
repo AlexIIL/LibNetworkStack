@@ -82,6 +82,24 @@ public class SimpleNetTester {
 
     public static Tf2Player[] players = new Tf2Player[1];
 
+    public static final ParentNetIdSingle<Tf2Team> TF2_TEAM
+        = new ParentNetIdSingle<Tf2Team>(TF2_GAME, Tf2Team.class, "team", -1) {
+            @Override
+            protected Tf2Team readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
+                return buffer.readBoolean() ? Tf2Team.RED : Tf2Team.BLUE;
+            }
+
+            @Override
+            protected void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, Tf2Team team) {
+                buffer.writeBoolean(team == Tf2Team.RED);
+            }
+        };
+
+    public static final NetIdDataK<Tf2Team> TEAM_WON = TF2_TEAM.idData("did_win").setReceiver((team, buf, ctx) -> {
+        boolean won = buf.readBoolean();
+        System.out.println(team + (won ? " won!" : " lost :("));
+    });
+
     public static final DynamicNetId<AnimationElement> ANIMATED
         = new DynamicNetId<>(AnimationElement.class, elem -> elem.netLink);
     public static final NetIdSignalK<AnimationElement> ANIMATE_FRAME = ANIMATED.idSignal("animate_frame");
@@ -180,6 +198,11 @@ public class SimpleNetTester {
         }
     }
 
+    public enum Tf2Team {
+        RED,
+        BLUE;
+    }
+
     public static abstract class Tf2Player {
         public final List<Tf2Weapon> weapons = new ArrayList<>();
         public final AnimationElement animation = new AnimationElement(PLAYER_ANIMATION.linkFactory(this));
@@ -219,6 +242,20 @@ public class SimpleNetTester {
         };
         side1.postConstruct();
         side2.postConstruct();
+        process();
+
+        TEAM_WON.send(side1, Tf2Team.RED, (team, buf, ctx) -> buf.writeBoolean(true));
+        TEAM_WON.send(side1, Tf2Team.RED, (team, buf, ctx) -> buf.writeBoolean(false));
+        TEAM_WON.send(side1, Tf2Team.BLUE, (team, buf, ctx) -> buf.writeBoolean(true));
+        TEAM_WON.send(side1, Tf2Team.BLUE, (team, buf, ctx) -> buf.writeBoolean(false));
+
+        process();
+
+        TEAM_WON.send(side2, Tf2Team.RED, (team, buf, ctx) -> buf.writeBoolean(true));
+        TEAM_WON.send(side2, Tf2Team.RED, (team, buf, ctx) -> buf.writeBoolean(false));
+        TEAM_WON.send(side2, Tf2Team.BLUE, (team, buf, ctx) -> buf.writeBoolean(true));
+        TEAM_WON.send(side2, Tf2Team.BLUE, (team, buf, ctx) -> buf.writeBoolean(false));
+
         process();
 
         SIGNAL_PING.setReceiver(ctx -> {

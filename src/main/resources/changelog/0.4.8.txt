@@ -1,0 +1,3 @@
+Bug fixes:
+
+* Fixed using only partial-bytes in both the header and payload of a NetIdDataK would result in the packet being dropped.

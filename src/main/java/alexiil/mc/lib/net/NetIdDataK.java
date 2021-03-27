@@ -74,8 +74,9 @@ public final class NetIdDataK<T> extends NetIdTyped<T> {
             checkingBuffer.writeMarkerId(thisId);
         }
         int headerLength = checkingBuffer.writerIndex();
+        int headerBitLength = checkingBuffer.getBitWriterIndex();
         writer.write(obj, checkingBuffer, ctx);
-        if (headerLength != checkingBuffer.writerIndex()) {
+        if (headerLength != checkingBuffer.writerIndex() || headerBitLength != checkingBuffer.getBitWriterIndex()) {
             // Only send data packets if anything was actually written.
             if (bufferTypes != null) {
                 InternalMsgUtil.sendNextTypes(connection, bufferTypes, checkingBuffer.getCountWrite());

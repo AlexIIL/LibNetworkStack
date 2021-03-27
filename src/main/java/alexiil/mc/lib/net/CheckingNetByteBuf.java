@@ -178,6 +178,16 @@ public class CheckingNetByteBuf extends NetByteBuf {
         return countWrite;
     }
 
+    @Override
+    public int getBitWriterIndex() {
+        return wrapped.getBitWriterIndex();
+    }
+
+    @Override
+    public int getBitReaderIndex() {
+        return wrapped.getBitReaderIndex();
+    }
+
     // Util
 
     private void validateRead(NetMethod expected) {

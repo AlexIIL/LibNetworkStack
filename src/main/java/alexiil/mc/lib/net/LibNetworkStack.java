@@ -41,7 +41,7 @@ public class LibNetworkStack implements ModInitializer {
 
         FabricLoader fabric = FabricLoader.getInstance();
         final File cfgDir;
-        if (fabric.getGameDirectory() == null) {
+        if (fabric.getGameDir() == null) {
             // Can happen during a JUnit test
             cfgDir = new File("config");
         } else {

@@ -94,6 +94,16 @@ public class NetByteBuf extends PacketByteBuf {
         }
     }
 
+    /** Bit version of {@link #writerIndex()}. */
+    public int getBitWriterIndex() {
+        return writePartialOffset;
+    }
+
+    /** Bit version of {@link #readerIndex()}. */
+    public int getBitReaderIndex() {
+        return readPartialOffset;
+    }
+
     @Override
     public NetByteBuf copy() {
         return asNetByteBuf(super.copy());
