@@ -16,6 +16,7 @@ import java.util.Random;
 
 import net.fabricmc.fabric.api.network.PacketContext;
 
+import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 
 import alexiil.mc.lib.net.ActiveConnection;
@@ -40,6 +41,7 @@ import alexiil.mc.lib.net.ParentNetIdDuel;
 import alexiil.mc.lib.net.ParentNetIdSingle;
 import alexiil.mc.lib.net.impl.CoreMinecraftNetUtil;
 import alexiil.mc.lib.net.impl.McNetworkStack;
+import net.minecraft.util.math.BlockPos;
 
 public class SimpleNetTester {
 
@@ -395,7 +397,7 @@ public class SimpleNetTester {
         public boolean clientIsOn;
 
         public ElectricFurnaceBlockEntity() {
-            super(null);
+            super(null, BlockPos.ORIGIN, Blocks.AIR.getDefaultState());
         }
 
         /** Sends the new brightness, to be rendered on the front of the block.
