@@ -14,7 +14,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.ScreenHandler;
 
 import alexiil.mc.lib.net.ActiveConnection;
@@ -72,7 +72,7 @@ public final class McNetworkStack {
 
             @Override
             public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, Entity value) {
-                buffer.writeInt(value.getEntityId());
+                buffer.writeInt(value.getId());
             }
         };
         // We're not changing the internal name, because that would needlessly break compat
@@ -113,8 +113,8 @@ public final class McNetworkStack {
                     if (a.getItem() != b.getItem()) {
                         return false;
                     }
-                    CompoundTag tagA = a.getTag();
-                    CompoundTag tagB = b.getTag();
+                    NbtCompound tagA = a.getTag();
+                    NbtCompound tagB = b.getTag();
                     if (tagA == null || tagB == null) {
                         return tagA == tagB;
                     }
@@ -131,11 +131,11 @@ public final class McNetworkStack {
                         buffer.writeBoolean(true);
                         Item item_1 = obj.getItem();
                         buffer.writeVarInt(Item.getRawId(item_1));
-                        CompoundTag tag = null;
+                        NbtCompound tag = null;
                         if (item_1.isDamageable() || item_1.shouldSyncTagToClient()) {
                             tag = obj.getTag();
                         }
-                        buffer.writeCompoundTag(tag);
+                        buffer.writeNbt(tag);
                     }
                 }
 
@@ -146,7 +146,7 @@ public final class McNetworkStack {
                     } else {
                         int id = buffer.readVarInt();
                         ItemStack stack = new ItemStack(Item.byRawId(id));
-                        stack.setTag(buffer.readCompoundTag());
+                        stack.setTag(buffer.readNbt());
                         return stack;
                     }
                 }

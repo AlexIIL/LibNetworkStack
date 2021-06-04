@@ -8,10 +8,11 @@
 package alexiil.mc.lib.net.mixin.impl;
 
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import alexiil.mc.lib.net.mixin.api.IPacketHandlerMixin;
 
+import net.minecraft.network.PacketByteBuf;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -38,7 +39,7 @@ public class NetworkStateMixin implements INetworkStateMixin {
     private Map<NetworkSide, ? extends IPacketHandlerMixin> packetHandlers;
 
     @Override
-    public <P extends IPacketCustomId<?>> int libnetworkstack_registerPacket(NetworkSide recvSide, Class<P> klass, Supplier<P> factory) {
+    public <P extends IPacketCustomId<?>> int libnetworkstack_registerPacket(NetworkSide recvSide, Class<P> klass, Function<PacketByteBuf, P> factory) {
         IPacketHandlerMixin mapping = packetHandlers.get(recvSide);
         int id = mapping.libnetworkstack_register(klass, factory);
         HANDLER_STATE_MAP.put(klass, (NetworkState) (Object) this);

@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 
 import io.netty.buffer.ByteBuf;
 
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -105,7 +105,7 @@ public class CheckingNetByteBuf extends NetByteBuf {
             to.append("  type = ").append(hit.getType()).append("\n");
             to.append("  is inside = ").append(hit.isInsideBlock());
         }),
-        COMPOUND_TAG((buf, to) -> to.append("nbt: ").append(buf.wrapped.readCompoundTag())),
+        COMPOUND_TAG((buf, to) -> to.append("nbt: ").append(buf.wrapped.readNbt())),
         STRING((buf, to) -> to.append("string: \"").append(buf.wrapped.readString()).append("\"")),
         ENUM((buf, to) -> {
             int enumCount = buf.typeBuffer.readVarUnsignedInt();
@@ -671,17 +671,17 @@ public class CheckingNetByteBuf extends NetByteBuf {
     }
 
     @Override
-    public CompoundTag readCompoundTag() {
+    public NbtCompound readNbt() {
         validateRead(NetMethod.COMPOUND_TAG);
-        CompoundTag val = wrapped.readCompoundTag();
+        NbtCompound val = wrapped.readNbt();
         recordRead(NetMethod.COMPOUND_TAG);
         return val;
     }
 
     @Override
-    public CheckingNetByteBuf writeCompoundTag(CompoundTag compoundTag) {
+    public CheckingNetByteBuf writeNbt(NbtCompound compoundTag) {
         write(NetMethod.COMPOUND_TAG);
-        wrapped.writeCompoundTag(compoundTag);
+        wrapped.writeNbt(compoundTag);
         return this;
     }
 

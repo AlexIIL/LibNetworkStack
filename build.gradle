@@ -1,12 +1,12 @@
 plugins {
-    id 'fabric-loom' version '0.2.7-SNAPSHOT'
+    id 'fabric-loom' version '0.8-SNAPSHOT'
     id 'net.minecrell.licenser' version '0.4.1'
 }
 
 apply plugin: 'maven-publish' // for uploading to a maven repo
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_16
+targetCompatibility = JavaVersion.VERSION_16
 
 archivesBaseName = "LibNetworkStack"
 version = "0.4.8-pre.1"
@@ -20,16 +20,16 @@ minecraft {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:1.16.4"
-    mappings "net.fabricmc:yarn:1.16.4+build.7:v2"
-    modImplementation "net.fabricmc:fabric-loader:0.10.8"
+    minecraft "com.mojang:minecraft:1.17-pre5"
+    mappings "net.fabricmc:yarn:1.17-pre5+build.6:v2"
+    modImplementation "net.fabricmc:fabric-loader:0.11.3"
 
     //Fabric api
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.28.1+1.16"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.34.8+1.17"
 
     // Misc
-    compile "com.google.code.findbugs:jsr305:3.0.1"
-    testCompile "junit:junit:4.12"
+    compileOnly "com.google.code.findbugs:jsr305:3.0.1"
+    testImplementation "junit:junit:4.12"
 }
 
 compileJava {
@@ -52,6 +52,9 @@ build.dependsOn(javadoc);
 // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
+
+    // Minecraft 1.17 (21w19a) upwards uses Java 16.
+    it.options.release = 16
 }
 
 // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
