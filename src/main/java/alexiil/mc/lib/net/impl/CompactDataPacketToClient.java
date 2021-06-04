@@ -21,14 +21,16 @@ public class CompactDataPacketToClient implements IPacketCustomId<ClientPlayNetw
     private final int serverExpectedId;
     private byte[] payload;
 
-    /** Used for reading */
-    public CompactDataPacketToClient() {
-        serverExpectedId = 0;
-    }
-
     public CompactDataPacketToClient(int serverExpectedId, byte[] payload) {
         this.serverExpectedId = serverExpectedId;
         this.payload = payload;
+    }
+
+    /** Used for reading */
+    public CompactDataPacketToClient(PacketByteBuf buf) {
+        serverExpectedId = 0;
+        payload = new byte[buf.readableBytes()];
+        buf.readBytes(payload);
     }
 
     @Override
@@ -37,13 +39,7 @@ public class CompactDataPacketToClient implements IPacketCustomId<ClientPlayNetw
     }
 
     @Override
-    public void read(PacketByteBuf buf) throws IOException {
-        payload = new byte[buf.readableBytes()];
-        buf.readBytes(payload);
-    }
-
-    @Override
-    public void write(PacketByteBuf buf) throws IOException {
+    public void write(PacketByteBuf buf) {
         buf.writeBytes(payload);
     }
 

@@ -7,12 +7,13 @@
  */
 package alexiil.mc.lib.net.mixin.api;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import net.minecraft.network.NetworkSide;
 
 import alexiil.mc.lib.net.impl.IPacketCustomId;
+import net.minecraft.network.PacketByteBuf;
 
 public interface INetworkStateMixin {
-    <P extends IPacketCustomId<?>> int libnetworkstack_registerPacket(NetworkSide recvSide, Class<P> klass, Supplier<P> factory);
+    <P extends IPacketCustomId<?>> int libnetworkstack_registerPacket(NetworkSide recvSide, Class<P> klass, Function<PacketByteBuf, P> factory);
 }

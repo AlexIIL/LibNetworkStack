@@ -8,8 +8,9 @@
 package alexiil.mc.lib.net.mixin.impl;
 
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
+import net.minecraft.network.PacketByteBuf;
 import org.apache.logging.log4j.LogManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,10 +32,10 @@ abstract class PacketHandlerMixin<T extends PacketListener> implements IPacketHa
 
     @Final
     @Shadow
-    private List<Supplier<? extends Packet<T>>> packetFactories;
+    private List<Function<PacketByteBuf, ? extends Packet<T>>> packetFactories;
 
     @Override
-    public int libnetworkstack_register(Class<? extends Packet<?>> klass, Supplier<? extends Packet<?>> factory) {
+    public int libnetworkstack_register(Class<? extends Packet<?>> klass, Function<PacketByteBuf, ? extends Packet<?>> factory) {
         int int_1 = this.packetFactories.size();
         int int_2 = this.packetIds.put((Class<? extends Packet<T>>) klass, int_1);
         if (int_2 != -1) {
@@ -42,7 +43,7 @@ abstract class PacketHandlerMixin<T extends PacketListener> implements IPacketHa
             LogManager.getLogger().fatal(string_1);
             throw new IllegalArgumentException(string_1);
         } else {
-            this.packetFactories.add((Supplier<? extends Packet<T>>) factory);
+            this.packetFactories.add((Function<PacketByteBuf, ? extends Packet<T>>) factory);
         }
 
         return int_1;
