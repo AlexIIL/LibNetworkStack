@@ -1,6 +1,6 @@
 plugins {
     id 'fabric-loom' version '0.8-SNAPSHOT'
-    id 'net.minecrell.licenser' version '0.4.1'
+    id 'org.cadixdev.licenser' version '0.6.0'
 }
 
 apply plugin: 'maven-publish' // for uploading to a maven repo
