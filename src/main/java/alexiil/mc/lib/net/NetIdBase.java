@@ -257,7 +257,7 @@ public abstract class NetIdBase extends TreeNetIdBase {
             return;
         }
         if (!(connection instanceof ActiveMinecraftConnection)) {
-            throw new IllegalStateException("You can only send " + this + " through a minecraft connection!");
+            throw new IllegalStateException("You can only send " + this + " through a minecraft connection! (Was given " + connection + ")");
         }
         ActiveMinecraftConnection a = (ActiveMinecraftConnection) connection;
         if (single == FLAG_SIDED_RECV_ON_CLIENT) {
