@@ -7,9 +7,6 @@
  */
 package alexiil.mc.lib.net.mixin.impl;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,15 +36,13 @@ public abstract class ChunkHolderMixin {
     @Shadow
     private ChunkPos pos;
 
-    @Inject(at = @At("RETURN"),
-        method = "sendBlockEntityUpdatePacket(" + WORLD + BLOCK_POS + ")V", locals = LocalCapture.CAPTURE_FAILHARD)
+    @Inject(at = @At("RETURN"), method = "sendBlockEntityUpdatePacket(" + WORLD + BLOCK_POS + ")V",
+        locals = LocalCapture.CAPTURE_FAILHARD)
     void sendCustomUpdatePacket(World world, BlockPos pos, CallbackInfo ci, BlockEntity be) {
 
-        if (be instanceof BlockEntityInitialData) {
-            List<ServerPlayerEntity> players
-                = playersWatchingChunkProvider.getPlayersWatchingChunk(this.pos, false).collect(Collectors.toList());
-            for (ServerPlayerEntity player : players) {
-                ((BlockEntityInitialData) be).sendInitialData(player);
+        if (be instanceof BlockEntityInitialData dataBe) {
+            for (ServerPlayerEntity player : playersWatchingChunkProvider.getPlayersWatchingChunk(this.pos, false)) {
+                dataBe.sendInitialData(player);
             }
         }
     }

@@ -357,7 +357,7 @@ public class NetByteBuf extends PacketByteBuf {
             throw new IllegalArgumentException("Tried to write an enum value without any values! How did you do this?");
         }
         if (possible.length == 1) return this;
-        writeFixedBits(value.ordinal(), MathHelper.log2DeBruijn(possible.length));
+        writeFixedBits(value.ordinal(), MathHelper.ceilLog2(possible.length));
         return this;
     }
 
@@ -374,7 +374,7 @@ public class NetByteBuf extends PacketByteBuf {
         if (enums.length == 1) {
             return enums[0];
         }
-        int length = MathHelper.log2DeBruijn(enums.length);
+        int length = MathHelper.ceilLog2(enums.length);
         int index = readFixedBits(length);
         return enums[index];
     }

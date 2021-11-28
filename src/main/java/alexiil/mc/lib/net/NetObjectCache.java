@@ -14,7 +14,7 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 
 import net.minecraft.util.Identifier;
-
+import alexiil.mc.lib.net.NetObjectCacheBase.Data;
 import it.unimi.dsi.fastutil.Hash;
 
 public final class NetObjectCache<T> extends NetObjectCacheBase<T> {

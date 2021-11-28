@@ -110,7 +110,7 @@ public class CheckingNetByteBuf extends NetByteBuf {
         ENUM((buf, to) -> {
             int enumCount = buf.typeBuffer.readVarUnsignedInt();
             to.append("enum (").append(enumCount).append("): ");
-            int bits = MathHelper.log2DeBruijn(enumCount);
+            int bits = MathHelper.ceilLog2(enumCount);
             to.append(buf.wrapped.readFixedBits(bits));
         }),
         VAR_UINT((buf, to) -> to.append("var_uint: ").append(buf.wrapped.readVarUnsignedInt())),
@@ -739,7 +739,7 @@ public class CheckingNetByteBuf extends NetByteBuf {
                 throw new InvalidNetTypeException(NetMethod.ENUM, countRead - 1, "" + len, "" + enums.length);
             }
         }
-        int index = wrapped.readFixedBits(MathHelper.log2DeBruijn(enums.length));
+        int index = wrapped.readFixedBits(MathHelper.ceilLog2(enums.length));
         if (recordReads) {
             typeBuffer.writeVarUnsignedInt(enums.length);
         }
@@ -766,7 +766,7 @@ public class CheckingNetByteBuf extends NetByteBuf {
         if (typeBuffer != null) {
             typeBuffer.writeVarUnsignedInt(possible.length);
         }
-        wrapped.writeFixedBits(value.ordinal(), MathHelper.log2DeBruijn(possible.length));
+        wrapped.writeFixedBits(value.ordinal(), MathHelper.ceilLog2(possible.length));
         return this;
     }
 

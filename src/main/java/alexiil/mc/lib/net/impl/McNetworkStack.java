@@ -102,7 +102,7 @@ public final class McNetworkStack {
 
                 @Override
                 public int hashCode(ItemStack o) {
-                    return Objects.hash(new Object[] { o.getItem(), o.getTag() });
+                    return Objects.hash(new Object[] { o.getItem(), o.getNbt() });
                 }
 
                 @Override
@@ -113,8 +113,8 @@ public final class McNetworkStack {
                     if (a.getItem() != b.getItem()) {
                         return false;
                     }
-                    NbtCompound tagA = a.getTag();
-                    NbtCompound tagB = b.getTag();
+                    NbtCompound tagA = a.getNbt();
+                    NbtCompound tagB = b.getNbt();
                     if (tagA == null || tagB == null) {
                         return tagA == tagB;
                     }
@@ -132,8 +132,8 @@ public final class McNetworkStack {
                         Item item_1 = obj.getItem();
                         buffer.writeVarInt(Item.getRawId(item_1));
                         NbtCompound tag = null;
-                        if (item_1.isDamageable() || item_1.shouldSyncTagToClient()) {
-                            tag = obj.getTag();
+                        if (item_1.isDamageable() || item_1.isNbtSynced()) {
+                            tag = obj.getNbt();
                         }
                         buffer.writeNbt(tag);
                     }
@@ -146,7 +146,7 @@ public final class McNetworkStack {
                     } else {
                         int id = buffer.readVarInt();
                         ItemStack stack = new ItemStack(Item.byRawId(id));
-                        stack.setTag(buffer.readNbt());
+                        stack.setNbt(buffer.readNbt());
                         return stack;
                     }
                 }

@@ -18,7 +18,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.entity.player.PlayerEntity;
-
+import alexiil.mc.lib.net.NetObjectCacheBase.Data;
 import alexiil.mc.lib.net.impl.ActiveMinecraftConnection;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;

@@ -7,6 +7,7 @@
  */
 package alexiil.mc.lib.net;
 
+import alexiil.mc.lib.net.BufferedConnection.BufferedPacketInfo;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
