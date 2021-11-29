@@ -9,7 +9,7 @@ sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = "LibNetworkStack"
-version = "0.6.0-pre.2"
+version = "0.6.0"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
@@ -53,8 +53,8 @@ build.dependsOn(javadoc);
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
 
-    // Minecraft 1.17 (21w19a) upwards uses Java 16.
-    it.options.release = 16
+    // Minecraft 1.18 upwards uses Java 17.
+    it.options.release = 17
 }
 
 // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
