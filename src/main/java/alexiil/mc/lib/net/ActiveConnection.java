@@ -77,7 +77,13 @@ public abstract class ActiveConnection {
             receivedTraceStringSegments = null;
             receivedTraceLines = null;
             receivedJoinedTraces = null;
-            rootTraceSegment = null;
+            // begin TMP_FIX_BLANKETCON_2022_ALEX_01
+            // TO REVERT:
+            // 1: Remove this next line
+            rootTraceSegment = new StringTraceSegment(0, null, null, null);
+            // 2: 
+            // rootTraceSegment = null;
+            // end TMP_FIX_BLANKETCON_2022_ALEX_01
         }
     }
 
