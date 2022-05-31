@@ -14,12 +14,19 @@ import java.util.Arrays;
 
 import io.netty.buffer.Unpooled;
 
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.server.world.ChunkHolder;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.world.ThreadedAnvilChunkStorage;
+import net.minecraft.util.math.ChunkPos;
+
 import alexiil.mc.lib.net.ActiveConnection.MultiTraceLines;
 import alexiil.mc.lib.net.ActiveConnection.SingleTraceLine;
 import alexiil.mc.lib.net.ActiveConnection.StringTraceSegment;
 import alexiil.mc.lib.net.ActiveConnection.StringTraceSeparator;
 import alexiil.mc.lib.net.CheckingNetByteBuf.InvalidNetTypeException;
 import alexiil.mc.lib.net.CheckingNetByteBuf.NetMethod;
+import alexiil.mc.lib.net.mixin.api.IThreadedAnvilChunkStorageMixin;
 
 public class InternalMsgUtil {
 
@@ -206,7 +213,8 @@ public class InternalMsgUtil {
                 connection.readMapIds.add(childId);
                 if (childId.getLengthForPacketAlloc() != len) {
                     throw new InvalidInputDataException(
-                        "Mismatched length! We expect " + lenToString(childId.getLengthForPacketAlloc()) + ", but we received " + lenToString(len)
+                        "Mismatched length! We expect " + lenToString(childId.getLengthForPacketAlloc())
+                            + ", but we received " + lenToString(len)
                     );
                 }
                 break;
@@ -667,6 +675,38 @@ public class InternalMsgUtil {
         connection.sendPacket(fullPayload, ID_INTERNAL_DEBUG_TYPES, null, 0);
         fullPayload.release();
     }
+
+    // begin TMP_FIX_BLANKETCON_2022_ALEX_01
+    static void createAndSendDebugThrowable(ActiveConnection connection, MessageContext.Write ctx) {
+        final Throwable throwable;
+        BlockEntity be = ctx.blockEntity;
+        if (be == null || !(be.getWorld() instanceof ServerWorld svWorld)) {
+            throwable = __NOT_A_BLOCK_ENTITY();
+        } else {
+            ThreadedAnvilChunkStorage tacs = svWorld.getChunkManager().threadedAnvilChunkStorage;
+            IThreadedAnvilChunkStorageMixin mixinTacs = (IThreadedAnvilChunkStorageMixin) tacs;
+            ChunkHolder chunkHolder = mixinTacs.libnetworkstack_getChunkHolder(new ChunkPos(be.getPos()));
+            if (chunkHolder.getWorldChunk() == null) {
+                throwable = __BLOCK_ENTITY_NOT_SENT();
+            } else {
+                throwable = __BLOCK_ENTITY_PROBABLY_SENT();
+            }
+        }
+        sendNextStacktrace(connection, throwable);
+    }
+
+    private static Throwable __NOT_A_BLOCK_ENTITY() {
+        return new Throwable();
+    }
+
+    private static Throwable __BLOCK_ENTITY_NOT_SENT() {
+        return new Throwable();
+    }
+
+    private static Throwable __BLOCK_ENTITY_PROBABLY_SENT() {
+        return new Throwable();
+    }
+    // end TMP_FIX_BLANKETCON_2022_ALEX_01
 
     static void sendNextStacktrace(ActiveConnection connection, Throwable t) {
         class Gen {

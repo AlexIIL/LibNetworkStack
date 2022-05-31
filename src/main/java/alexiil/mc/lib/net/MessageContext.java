@@ -7,6 +7,8 @@
  */
 package alexiil.mc.lib.net;
 
+import net.minecraft.block.entity.BlockEntity;
+
 public abstract class MessageContext implements IMsgCtx {
 
     public final ActiveConnection connection;
@@ -46,6 +48,14 @@ public abstract class MessageContext implements IMsgCtx {
     }
 
     public static class Write extends MessageContext implements IMsgWriteCtx {
+
+        // begin TMP_FIX_BLANKETCON_2022_ALEX_01
+        /** @deprecated WARNING: Temporary field, used solely to debug an issue. DO NOT TOUCH FROM THIS FIELD IF YOU
+         *             AREN'T LIB NETWORK STACK! */
+        @Deprecated
+        public BlockEntity blockEntity;
+        // end TMP_FIX_BLANKETCON_2022_ALEX_01
+
         public Write(ActiveConnection connection, NetIdBase id) {
             super(connection, id);
         }
