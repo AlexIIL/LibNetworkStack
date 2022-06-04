@@ -75,6 +75,12 @@ public final class MsgUtil {
     public static void appendBufferData(
         ByteBuf buffer, int length, StringBuilder sb, String linePrefix, int readerIndex
     ) {
+        appendBufferData(buffer, 0, length, sb, linePrefix, readerIndex);
+    }
+
+    public static void appendBufferData(
+        ByteBuf buffer, int offset, int length, StringBuilder sb, String linePrefix, int readerIndex
+    ) {
         linePrefix = "\n" + linePrefix;
 
         for (int i = 0; true; i++) {
@@ -85,9 +91,9 @@ public final class MsgUtil {
                 sb.append(linePrefix);
             }
             for (int j = from; j < to; j++) {
-                byte b = buffer.getByte(j);
+                byte b = buffer.getByte(j + offset);
                 sb.append(StringUtil.byteToHexStringPadded(b));
-                if (from + j + 1 == readerIndex) {
+                if (j + 1 == readerIndex) {
                     sb.append('#');
                 } else {
                     sb.append(' ');
@@ -100,7 +106,7 @@ public final class MsgUtil {
 
             sb.append("| ");
             for (int j = from; j < to; j++) {
-                byte b = buffer.getByte(j);
+                byte b = buffer.getByte(j + offset);
                 char c = (char) b;
                 if (c < 32 || c > 127) {
                     c = ' ';

@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.CodecException;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.server.world.ChunkHolder;
@@ -26,6 +27,7 @@ import alexiil.mc.lib.net.ActiveConnection.StringTraceSegment;
 import alexiil.mc.lib.net.ActiveConnection.StringTraceSeparator;
 import alexiil.mc.lib.net.CheckingNetByteBuf.InvalidNetTypeException;
 import alexiil.mc.lib.net.CheckingNetByteBuf.NetMethod;
+import alexiil.mc.lib.net.NetByteBuf.SavedReaderIndex;
 import alexiil.mc.lib.net.mixin.api.IThreadedAnvilChunkStorageMixin;
 
 public class InternalMsgUtil {
@@ -305,8 +307,9 @@ public class InternalMsgUtil {
                 } else {
                     len = 1 + buffer.readUnsignedMedium();
                 }
-                NetByteBuf payload = buffer.readBytes(len);
-                payload.markReaderIndex();
+                NetByteBuf payload = connection.allocBuffer(len);
+                buffer.readBytes(payload, len);
+                SavedReaderIndex payloadStart = payload.saveReaderIndex();
 
                 NetByteBuf typeBuffer = connection.lastReceivedTypes;
                 final CheckingNetByteBuf checkingBuffer;
@@ -344,8 +347,9 @@ public class InternalMsgUtil {
                             );
                         }
                     }
-                } catch (InvalidInputDataException | InvalidNetTypeException | IndexOutOfBoundsException e) {
-
+                } catch (
+                    InvalidInputDataException | InvalidNetTypeException | IndexOutOfBoundsException | CodecException e
+                ) {
                     StringBuilder sb = new StringBuilder();
                     sb.append("Packet failed to read correctly!\n\n");
                     sb.append("Packet: " + netId + "\n");
@@ -356,14 +360,12 @@ public class InternalMsgUtil {
                     sb.append("Raw Bytes:\n");
                     sb.append("+---------\n");
                     sb.append("| ");
-                    NetByteBuf tmp = NetByteBuf.buffer();
-                    checkingBuffer.getBytes(0, tmp, len);
-                    MsgUtil.appendBufferData(tmp, tmp.readableBytes(), sb, "| ", payload.readerIndex());
+                    MsgUtil.appendBufferData(checkingBuffer, 0, len, sb, "| ", payload.readerIndex());
                     sb.append("\n");
                     sb.append("+---------\n");
 
                     NetByteBuf.SavedReaderIndex payloadIndex = payload.saveReaderIndex();
-                    payload.resetReaderIndex();
+                    payload.resetReaderIndex(payloadStart);
 
                     if (typeBuffer == null) {
                         sb.append("WARNING: No type information found!\n");
@@ -440,11 +442,11 @@ public class InternalMsgUtil {
                         }
                         typeBuffer.resetReaderIndex(typeIndex);
 
-                        if (payload.readableBytes() > 0) {
+                        int rem = payload.readableBytes();
+                        if (rem > 0) {
                             sb.append("+---------\n");
-                            sb.append("|Remaining Bytes (" + payload.readableBytes() + "):\n| ");
-                            tmp = payload.readBytes(payload.readableBytes());
-                            MsgUtil.appendBufferData(tmp, tmp.readableBytes(), sb, "| ", -1);
+                            sb.append("|Remaining Bytes (" + rem + "):\n| ");
+                            MsgUtil.appendBufferData(payload, payload.readerIndex(), rem, sb, "| ", -1);
                             sb.append("\n");
                         }
                         sb.append("+---------\n");
@@ -633,13 +635,28 @@ public class InternalMsgUtil {
         fullPayload.writeVarUnsignedInt(id);
         if (!netId.hasFixedLength()) {
             if ((netId.getFinalFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_TINY_PACKET) {
-                assert payload.readableBytes() <= (1 << 8);
+                if (payload.readableBytes() > (1 << 8)) {
+                    throw new IllegalArgumentException(
+                        "Packet Payload too large for TINY packet size - was " + payload.readableBytes()
+                            + ", which is bigger than 256!"
+                    );
+                }
                 fullPayload.writeByte(payload.readableBytes() - 1);
             } else if ((netId.getFinalFlags() & NetIdBase.PACKET_SIZE_FLAG) == NetIdBase.FLAG_NORMAL_PACKET) {
-                assert payload.readableBytes() <= (1 << 16);
+                if (payload.readableBytes() > (1 << 16)) {
+                    throw new IllegalArgumentException(
+                        "Packet Payload too large for NORMAL packet size - was " + payload.readableBytes()
+                            + ", which is bigger than " + (1 << 16) + "!"
+                    );
+                }
                 fullPayload.writeShort(payload.readableBytes() - 1);
             } else {
-                assert payload.readableBytes() <= (1 << 24);
+                if (payload.readableBytes() > (1 << 24)) {
+                    throw new IllegalArgumentException(
+                        "Packet Payload too large for LARGE packet size - was " + payload.readableBytes()
+                            + ", which is bigger than " + (1 << 24) + "!"
+                    );
+                }
                 fullPayload.writeMedium(payload.readableBytes() - 1);
             }
         }
@@ -660,13 +677,13 @@ public class InternalMsgUtil {
 
     static void sendNextTypes(ActiveConnection connection, NetByteBuf types, int count) {
         int bytes = types.readableBytes();
-        if (bytes > NetByteBuf.MAX_VAR_U_INT_2_BYTES) {
-            throw new IllegalArgumentException("Too many bytes! (" + bytes + ") > " + NetByteBuf.MAX_VAR_U_INT_2_BYTES);
+        if (bytes > NetByteBuf.MAX_VAR_U_INT_3_BYTES) {
+            throw new IllegalArgumentException("Too many bytes! (" + bytes + ") > " + NetByteBuf.MAX_VAR_U_INT_3_BYTES);
         }
-        if (count > NetByteBuf.MAX_VAR_U_INT_2_BYTES) {
-            throw new IllegalArgumentException("Too many types! (" + count + ") > " + NetByteBuf.MAX_VAR_U_INT_2_BYTES);
+        if (count > NetByteBuf.MAX_VAR_U_INT_3_BYTES) {
+            throw new IllegalArgumentException("Too many types! (" + count + ") > " + NetByteBuf.MAX_VAR_U_INT_3_BYTES);
         }
-        int len = 1 + 2 + 2 + bytes;
+        int len = 1 + 3 + 3 + bytes;
         NetByteBuf fullPayload = NetByteBuf.buffer(len);
         fullPayload.writeVarUnsignedInt(ID_INTERNAL_DEBUG_TYPES);
         fullPayload.writeVarUnsignedInt(bytes);

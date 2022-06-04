@@ -18,7 +18,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.entity.player.PlayerEntity;
-import alexiil.mc.lib.net.NetObjectCacheBase.Data;
+
 import alexiil.mc.lib.net.impl.ActiveMinecraftConnection;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -56,7 +56,7 @@ public abstract class ActiveConnection {
     /** As stacktraces can leak (potentially) information about the server modset (maybe?) and it's quite expensive this
      * values should always be AND'd with {@link LibNetworkStack#CONFIG_RECORD_STACKTRACES} to ensure that both sides
      * are okay sending information. */
-    boolean sendStacktraces = false;
+    boolean sendStacktraces = isDebuggingConnection();
 
     int lastReceivedTypesCount;
     NetByteBuf lastReceivedTypes;
@@ -81,10 +81,14 @@ public abstract class ActiveConnection {
             // TO REVERT:
             // 1: Remove this next line
             rootTraceSegment = new StringTraceSegment(0, null, null, null);
-            // 2: 
+            // 2: Uncomment this next line
             // rootTraceSegment = null;
             // end TMP_FIX_BLANKETCON_2022_ALEX_01
         }
+    }
+
+    protected boolean isDebuggingConnection() {
+        return false;
     }
 
     public final void postConstruct() {
@@ -129,6 +133,14 @@ public abstract class ActiveConnection {
 
     public void onReceiveRawData(NetByteBuf data) throws InvalidInputDataException {
         InternalMsgUtil.onReceive(this, data);
+    }
+
+    public NetByteBuf allocBuffer() {
+        return NetByteBuf.buffer();
+    }
+
+    public NetByteBuf allocBuffer(int initialCapacity) {
+        return NetByteBuf.buffer(initialCapacity);
     }
 
     <T> NetObjectCacheBase<T>.Data getCacheData(NetObjectCacheBase<T> cache) {

@@ -76,7 +76,7 @@ public abstract class NetIdBase extends TreeNetIdBase {
      * @see #setNormalSize()
      * @see #setLargeSize() */
     public final void setTinySize() {
-        if (hasFixedLength()) {
+        if (!hasFixedLength()) {
             changeFlag(flags & ~PACKET_SIZE_FLAG | FLAG_TINY_PACKET);
         }
     }
@@ -100,7 +100,7 @@ public abstract class NetIdBase extends TreeNetIdBase {
      * @see #setTinySize()
      * @see #setLargeSize() */
     public final void setNormalSize() {
-        if (hasFixedLength()) {
+        if (!hasFixedLength()) {
             changeFlag(flags & ~PACKET_SIZE_FLAG | FLAG_NORMAL_PACKET);
         }
     }
@@ -124,7 +124,7 @@ public abstract class NetIdBase extends TreeNetIdBase {
      * @see #setTinySize()
      * @see #setNormalSize() */
     public final void setLargeSize() {
-        if (hasFixedLength()) {
+        if (!hasFixedLength()) {
             changeFlag(flags & ~PACKET_SIZE_FLAG | FLAG_LARGE_PACKET);
         }
     }

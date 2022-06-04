@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 import io.netty.buffer.ByteBuf;
 
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtTagSizeTracker;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -108,10 +109,16 @@ public class CheckingNetByteBuf extends NetByteBuf {
         COMPOUND_TAG((buf, to) -> to.append("nbt: ").append(buf.wrapped.readNbt())),
         STRING((buf, to) -> to.append("string: \"").append(buf.wrapped.readString()).append("\"")),
         ENUM((buf, to) -> {
-            int enumCount = buf.typeBuffer.readVarUnsignedInt();
-            to.append("enum (").append(enumCount).append("): ");
-            int bits = MathHelper.ceilLog2(enumCount);
-            to.append(buf.wrapped.readFixedBits(bits));
+            if (buf.passthrough) {
+                int enumCount = buf.typeBuffer.readVarUnsignedInt();
+                to.append("enum (").append(enumCount).append("): ");
+                to.append(buf.wrapped.readVarInt());
+            } else {
+                int enumCount = buf.typeBuffer.readVarUnsignedInt();
+                to.append("enum (").append(enumCount).append("): ");
+                int bits = MathHelper.ceilLog2(enumCount);
+                to.append(buf.wrapped.readFixedBits(bits));
+            }
         }),
         VAR_UINT((buf, to) -> to.append("var_uint: ").append(buf.wrapped.readVarUnsignedInt())),
         VAR_ULONG((buf, to) -> to.append("var_ulong: ").append(buf.wrapped.readVarUnsignedLong())),
@@ -157,7 +164,7 @@ public class CheckingNetByteBuf extends NetByteBuf {
     private int countWrite = 0;
 
     public CheckingNetByteBuf(NetByteBuf wrapped, @Nullable NetByteBuf typeData) {
-        super(wrapped);
+        super(wrapped, wrapped.passthrough);
         this.wrapped = wrapped;
         this.typeBuffer = typeData;
     }
@@ -671,9 +678,9 @@ public class CheckingNetByteBuf extends NetByteBuf {
     }
 
     @Override
-    public NbtCompound readNbt() {
+    public NbtCompound readNbt(NbtTagSizeTracker sizeTracker) {
         validateRead(NetMethod.COMPOUND_TAG);
-        NbtCompound val = wrapped.readNbt();
+        NbtCompound val = wrapped.readNbt(sizeTracker);
         recordRead(NetMethod.COMPOUND_TAG);
         return val;
     }
@@ -731,19 +738,23 @@ public class CheckingNetByteBuf extends NetByteBuf {
                     throw new InvalidNetTypeException(NetMethod.ENUM, countRead - 1, "" + len, "" + 1);
                 }
             }
-            return enums[0];
-        }
-        if (!recordReads && typeBuffer != null) {
+            if (!passthrough) {
+                return enums[0];
+            }
+        } else if (recordReads) {
+            typeBuffer.writeVarUnsignedInt(enums.length);
+        } else if (typeBuffer != null) {
             int len = typeBuffer.readVarUnsignedInt();
             if (len != enums.length) {
                 throw new InvalidNetTypeException(NetMethod.ENUM, countRead - 1, "" + len, "" + enums.length);
             }
         }
-        int index = wrapped.readFixedBits(MathHelper.ceilLog2(enums.length));
-        if (recordReads) {
-            typeBuffer.writeVarUnsignedInt(enums.length);
+
+        if (passthrough) {
+            return wrapped.readEnumConstant(enumClass);
         }
-        return enums[index];
+
+        return enums[wrapped.readFixedBits(MathHelper.ceilLog2(enums.length))];
     }
 
     @Override
@@ -761,12 +772,14 @@ public class CheckingNetByteBuf extends NetByteBuf {
             if (typeBuffer != null) {
                 typeBuffer.writeVarUnsignedInt(1);
             }
-            return this;
-        }
-        if (typeBuffer != null) {
+        } else if (typeBuffer != null) {
             typeBuffer.writeVarUnsignedInt(possible.length);
         }
-        wrapped.writeFixedBits(value.ordinal(), MathHelper.ceilLog2(possible.length));
+        if (passthrough) {
+            wrapped.writeEnumConstant(value);
+        } else if (possible.length > 1) {
+            wrapped.writeFixedBits(value.ordinal(), MathHelper.ceilLog2(possible.length));
+        }
         return this;
     }
 

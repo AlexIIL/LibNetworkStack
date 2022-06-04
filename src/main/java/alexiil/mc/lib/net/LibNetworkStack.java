@@ -71,16 +71,19 @@ public class LibNetworkStack implements ModInitializer {
 
         boolean hasAll = true;
 
+        boolean forceEnabled = FabricLoader.getInstance().isModLoaded("network-drain-cleaner");
+
         hasAll &= props.containsKey("debug.log");
         debug |= "true".equalsIgnoreCase(props.getProperty("debug.log", "false"));
 
-        DEBUG = debug;
+        DEBUG = forceEnabled || debug;
 
         hasAll &= props.containsKey("debug.record_types");
-        CONFIG_RECORD_TYPES = "true".equalsIgnoreCase(props.getProperty("debug.record_types", "false"));
+        CONFIG_RECORD_TYPES = forceEnabled || "true".equalsIgnoreCase(props.getProperty("debug.record_types", "false"));
 
         hasAll &= props.containsKey("debug.record_stacktraces");
-        CONFIG_RECORD_STACKTRACES = "true".equalsIgnoreCase(props.getProperty("debug.record_stacktraces", "false"));
+        CONFIG_RECORD_STACKTRACES
+            = forceEnabled || "true".equalsIgnoreCase(props.getProperty("debug.record_stacktraces", "false"));
 
         if (!hasAll) {
             try (Writer fw = new OutputStreamWriter(new FileOutputStream(cfgFile, true), StandardCharsets.UTF_8)) {

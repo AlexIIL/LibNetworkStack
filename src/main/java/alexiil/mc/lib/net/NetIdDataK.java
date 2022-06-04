@@ -56,7 +56,7 @@ public final class NetIdDataK<T> extends NetIdTyped<T> {
     public void send(ActiveConnection connection, T obj, IMsgDataWriterK<T> writer) {
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
         validateSendingSide(ctx);
-        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
+        NetByteBuf buffer = hasFixedLength() ? connection.allocBuffer(totalLength) : connection.allocBuffer();
         NetByteBuf bufferTypes = connection.sendTypes ? NetByteBuf.buffer() : null;
         CheckingNetByteBuf checkingBuffer = new CheckingNetByteBuf(buffer, bufferTypes);
         final NetIdPath resolvedPath;
