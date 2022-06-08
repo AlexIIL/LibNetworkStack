@@ -78,7 +78,10 @@ public class CoreMinecraftNetUtil {
         } else {
             Set<PlayerEntity> players = PlayerStream.around(w, be.getPos(), distance).collect(Collectors.toSet());
             for (PlayerEntity player : players) {
-                list.add(getServerConnection(((ServerPlayerEntity) player).networkHandler));
+                ActiveServerConnection con = getServerConnection(((ServerPlayerEntity) player).networkHandler);
+                if (con != null) {
+                    list.add(con);
+                }
             }
         }
         return list;
@@ -98,7 +101,14 @@ public class CoreMinecraftNetUtil {
             throw new NullPointerException("player");
         }
         if (player instanceof ServerPlayerEntity) {
-            return getServerConnection(((ServerPlayerEntity) player).networkHandler);
+            ActiveServerConnection connection = getServerConnection(((ServerPlayerEntity) player).networkHandler);
+            if (connection == null) {
+                throw new IllegalStateException(
+                    "Unable to obtain an ActiveMinecraftConnection for " + player
+                        + ", likely because it's connection is not open!"
+                );
+            }
+            return connection;
         } else if (player.world.isClient) {
             ClientPlayerEntity clientPlayer = MinecraftClient.getInstance().player;
             if (clientPlayer == null) {

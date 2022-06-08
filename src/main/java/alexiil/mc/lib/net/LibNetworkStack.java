@@ -76,7 +76,7 @@ public class LibNetworkStack implements ModInitializer {
         hasAll &= props.containsKey("debug.log");
         debug |= "true".equalsIgnoreCase(props.getProperty("debug.log", "false"));
 
-        DEBUG = forceEnabled || debug;
+        DEBUG = debug;
 
         hasAll &= props.containsKey("debug.record_types");
         CONFIG_RECORD_TYPES = forceEnabled || "true".equalsIgnoreCase(props.getProperty("debug.record_types", "false"));
