@@ -91,7 +91,10 @@ public class CoreMinecraftNetUtil {
         List<PlayerEntity> players = PlayerStream.watching(world, pos).collect(Collectors.toList());
         List<ActiveMinecraftConnection> list = new ArrayList<>();
         for (PlayerEntity player : players) {
-            list.add(getConnection(player));
+            ActiveMinecraftConnection connection = getConnection(player);
+            if (connection != null) {
+                list.add(connection);
+            }
         }
         return list;
     }
@@ -101,14 +104,7 @@ public class CoreMinecraftNetUtil {
             throw new NullPointerException("player");
         }
         if (player instanceof ServerPlayerEntity) {
-            ActiveServerConnection connection = getServerConnection(((ServerPlayerEntity) player).networkHandler);
-            if (connection == null) {
-                throw new IllegalStateException(
-                    "Unable to obtain an ActiveMinecraftConnection for " + player
-                        + ", likely because it's connection is not open!"
-                );
-            }
-            return connection;
+            return getServerConnection(((ServerPlayerEntity) player).networkHandler);
         } else if (player.world.isClient) {
             ClientPlayerEntity clientPlayer = MinecraftClient.getInstance().player;
             if (clientPlayer == null) {
@@ -278,11 +274,9 @@ public class CoreMinecraftNetUtil {
     private static ActiveServerConnection getServerConnection(ServerPlayNetworkHandler netHandler) {
         return serverConnections.computeIfAbsent(netHandler, c -> {
             if (!netHandler.connection.isOpen()) {
-                if (DEBUG) {
-                    LibNetworkStack.LOGGER.info(
-                        "Disallowed server connection for " + netHandler.player + " because it's channel is not open!"
-                    );
-                }
+                LibNetworkStack.LOGGER.warn(
+                    "Disallowed server connection for " + netHandler.player + " because it's channel is not open!"
+                );
                 return null;
             } else {
                 if (DEBUG) {
