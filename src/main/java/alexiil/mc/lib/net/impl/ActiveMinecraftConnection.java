@@ -7,8 +7,6 @@
  */
 package alexiil.mc.lib.net.impl;
 
-import net.fabricmc.fabric.api.network.PacketContext;
-
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.Packet;
 import net.minecraft.util.Identifier;
@@ -57,19 +55,8 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     private int theirCustomId = NET_ID_NOT_OPTIMISED;
     private boolean hasSentCustomId;
 
-    /** Replaced by the specific methods ({@link #getPlayer()}, {@link #getNetSide()}, and ) */
-    @Deprecated
-    public final PacketContext ctx;
-
-    public ActiveMinecraftConnection(PacketContext ctx) {
+    public ActiveMinecraftConnection() {
         super(McNetworkStack.ROOT, /* Drop after 3 seconds by default */ 3 * 20);
-        this.ctx = ctx;
-    }
-
-    @Override
-    @Deprecated
-    public PacketContext getMinecraftContext() {
-        return ctx;
     }
 
     /** @return The "side" of this connection. This will be {@link EnumNetSide#CLIENT} both when writing client to

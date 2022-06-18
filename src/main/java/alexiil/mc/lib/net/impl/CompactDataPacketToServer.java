@@ -7,11 +7,7 @@
  */
 package alexiil.mc.lib.net.impl;
 
-import java.io.IOException;
-
 import io.netty.buffer.Unpooled;
-
-import net.fabricmc.fabric.api.network.PacketContext;
 
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayNetworkHandler;

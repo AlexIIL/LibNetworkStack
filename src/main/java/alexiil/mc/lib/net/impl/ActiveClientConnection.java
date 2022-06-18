@@ -7,9 +7,6 @@
  */
 package alexiil.mc.lib.net.impl;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.network.PacketContext;
-
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.render.RenderTickCounter;
@@ -17,7 +14,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.c2s.play.CustomPayloadC2SPacket;
 import net.minecraft.util.Util;
-import net.minecraft.util.thread.ThreadExecutor;
 
 import alexiil.mc.lib.net.EnumNetSide;
 import alexiil.mc.lib.net.NetByteBuf;
@@ -44,22 +40,6 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
     private double smoothedServerTickDelta = 0;
 
     public ActiveClientConnection(ClientPlayNetworkHandler netHandler) {
-        super(new PacketContext() {
-            @Override
-            public ThreadExecutor getTaskQueue() {
-                return MinecraftClient.getInstance();
-            }
-
-            @Override
-            public PlayerEntity getPlayer() {
-                return MinecraftClient.getInstance().player;
-            }
-
-            @Override
-            public EnvType getPacketEnvironment() {
-                return EnvType.CLIENT;
-            }
-        });
         this.netHandler = netHandler;
     }
 

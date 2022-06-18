@@ -14,9 +14,6 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.network.PacketContext;
-
 import net.minecraft.entity.player.PlayerEntity;
 
 import alexiil.mc.lib.net.impl.ActiveMinecraftConnection;
@@ -98,25 +95,18 @@ public abstract class ActiveConnection {
         }
     }
 
-    /** @return The Fabric API {@link PacketContext} for this connection. Throws an error if this is not a
-     *         {@link ActiveMinecraftConnection}. (Although mods will *never* need to worry about that unless they
-     *         create their own netty layer for a completely different connection).
-     * @deprecated Replaced by the specific methods {@link #getPlayer()} and {@link #getNetSide()}. */
-    @Deprecated
-    public abstract PacketContext getMinecraftContext();
-
     /** @return The "side" of this connection. If this is an {@link ActiveMinecraftConnection} then this will be CLIENT
      *         both when writing client to server packets, and when reading packets sent from the server. (And SERVER
      *         both when writing server to client packets, and when reading client to server packets). Other connection
      *         types might throw an exception if they reuse LNS for a non-standard minecraft connection. */
     public EnumNetSide getNetSide() {
-        return getMinecraftContext().getPacketEnvironment() == EnvType.CLIENT ? EnumNetSide.CLIENT : EnumNetSide.SERVER;
+        throw new UnsupportedOperationException("This type of ActiveConnection does not support net-sides.");
     }
 
     /** @return The Minecraft {@link PlayerEntity} for this connection. Throws an error if this is not a
      *         {@link ActiveMinecraftConnection}. */
     public PlayerEntity getPlayer() {
-        return getMinecraftContext().getPlayer();
+        throw new UnsupportedOperationException("This type of ActiveConnection does not support players.");
     }
 
     /** @param packetId The packet ID that has been written out to the first int of the given buffer.

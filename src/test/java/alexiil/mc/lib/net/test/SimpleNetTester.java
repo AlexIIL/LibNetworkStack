@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 
-import net.fabricmc.fabric.api.network.PacketContext;
-
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 
@@ -51,11 +49,6 @@ public class SimpleNetTester {
         private TestConnection(ParentNetId rootId, int id) {
             super(rootId);
             this.id = id;
-        }
-
-        @Override
-        public PacketContext getMinecraftContext() {
-            throw new IllegalStateException("This isn't a minecraft connection!");
         }
 
         @Override
