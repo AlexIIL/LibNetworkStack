@@ -7,26 +7,17 @@
  */
 package alexiil.mc.lib.net.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import javax.annotation.Nullable;
 
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.event.client.ClientTickCallback;
-import net.fabricmc.fabric.api.event.server.ServerStopCallback;
-import net.fabricmc.fabric.api.event.server.ServerTickCallback;
-import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
-import net.fabricmc.fabric.api.network.PacketContext;
-import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.fabric.api.server.PlayerStream;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -39,7 +30,8 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -76,9 +68,9 @@ public class CoreMinecraftNetUtil {
                 list.add(currentClientConnection);
             }
         } else {
-            Set<PlayerEntity> players = PlayerStream.around(w, be.getPos(), distance).collect(Collectors.toSet());
-            for (PlayerEntity player : players) {
-                ActiveServerConnection con = getServerConnection(((ServerPlayerEntity) player).networkHandler);
+            Collection<ServerPlayerEntity> players = PlayerLookup.around((ServerWorld) w, be.getPos(), distance);
+            for (ServerPlayerEntity player : players) {
+                ActiveServerConnection con = getServerConnection(player.networkHandler);
                 if (con != null) {
                     list.add(con);
                 }
@@ -88,9 +80,13 @@ public class CoreMinecraftNetUtil {
     }
 
     public static List<ActiveMinecraftConnection> getPlayersWatching(World world, BlockPos pos) {
-        List<PlayerEntity> players = PlayerStream.watching(world, pos).collect(Collectors.toList());
+        if (!(world instanceof ServerWorld)) {
+            throw new IllegalArgumentException("getPlayersWatching must be given a ServerWorld instance.");
+        }
+
+        Collection<ServerPlayerEntity> players = PlayerLookup.tracking((ServerWorld) world, pos);
         List<ActiveMinecraftConnection> list = new ArrayList<>();
-        for (PlayerEntity player : players) {
+        for (ServerPlayerEntity player : players) {
             ActiveMinecraftConnection connection = getConnection(player);
             if (connection != null) {
                 list.add(connection);
@@ -125,46 +121,39 @@ public class CoreMinecraftNetUtil {
     }
 
     public static void load() {
-        if (PacketContext.class.isAssignableFrom(ServerPlayNetworkHandler.class)) {
-            // Fabric API: Networking V0
-            ServerSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
-                onServerReceivePacket((ServerPlayNetworkHandler) ctx, NetByteBuf.asNetByteBuf(buffer));
-            });
-        } else {
-            // Fabric API: Networking V1
-            // Object and then cast to avoid the verifier classloading
-            Object handler = new ServerPlayNetworking.PlayChannelHandler() {
-                @Override
-                public void receive(
-                    MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler,
-                    PacketByteBuf buf, PacketSender responseSender
-                ) {
-                    ActiveServerConnection connection = getServerConnection(handler);
-                    if (connection == null) {
-                        return;
-                    }
-
-                    NetByteBuf b = NetByteBuf.asNetByteBuf(buf.copy());
-                    server.execute(() -> {
-                        try {
-                            connection.onReceiveRawData(b);
-                            b.release();
-                        } catch (InvalidInputDataException e) {
-                            e.printStackTrace();
-                            handler.disconnect(
-                                new LiteralText("LibNetworkStack: read error (see server logs for more details)\n" + e)
-                            );
-                        }
-                    });
+        // Fabric API: Networking V1
+        // Object and then cast to avoid the verifier classloading
+        Object handler = new ServerPlayNetworking.PlayChannelHandler() {
+            @Override
+            public void receive(
+                MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler,
+                PacketByteBuf buf, PacketSender responseSender
+            ) {
+                ActiveServerConnection connection = getServerConnection(handler);
+                if (connection == null) {
+                    return;
                 }
-            };
-            ServerPlayNetworking.registerGlobalReceiver(
-                ActiveMinecraftConnection.PACKET_ID, (ServerPlayNetworking.PlayChannelHandler) handler
-            );
-        }
 
-        ServerTickCallback.EVENT.register(server -> onServerTick());
-        ServerStopCallback.EVENT.register(server -> onServerStop());
+                NetByteBuf b = NetByteBuf.asNetByteBuf(buf.copy());
+                server.execute(() -> {
+                    try {
+                        connection.onReceiveRawData(b);
+                        b.release();
+                    } catch (InvalidInputDataException e) {
+                        e.printStackTrace();
+                        handler.disconnect(
+                            Text.of("LibNetworkStack: read error (see server logs for more details)\n" + e)
+                        );
+                    }
+                });
+            }
+        };
+        ServerPlayNetworking.registerGlobalReceiver(
+            ActiveMinecraftConnection.PACKET_ID, (ServerPlayNetworking.PlayChannelHandler) handler
+        );
+
+        ServerTickEvents.END_SERVER_TICK.register(server -> onServerTick());
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> onServerStop());
 
         INetworkStateMixin play = (INetworkStateMixin) (Object) NetworkState.PLAY;
         clientExpectedId = play.libnetworkstack_registerPacket(
@@ -176,41 +165,34 @@ public class CoreMinecraftNetUtil {
     }
 
     public static void loadClient() {
-        if (PacketContext.class.isAssignableFrom(ClientPlayNetworkHandler.class)) {
-            // Fabric API: Networking v0
-            ClientSidePacketRegistry.INSTANCE.register(ActiveMinecraftConnection.PACKET_ID, (ctx, buffer) -> {
-                onClientReceivePacket((ClientPlayNetworkHandler) ctx, NetByteBuf.asNetByteBuf(buffer));
-            });
-        } else {
-            // Fabric API: Networking V1
-            Object handler = new ClientPlayNetworking.PlayChannelHandler() {
-                @Override
-                public void receive(
-                    MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buffer,
-                    PacketSender responseSender
-                ) {
-                    ActiveClientConnection connection = getOrCreateClientConnection(handler);
-                    NetByteBuf b = NetByteBuf.asNetByteBuf(buffer.copy());
-                    client.execute(() -> {
-                        try {
-                            connection.onReceiveRawData(b);
-                            b.release();
-                        } catch (InvalidInputDataException e) {
-                            e.printStackTrace();
-                            handler.getConnection()
-                                .disconnect(new LiteralText("LibNetworkStack: read error (see logs for details)"));
-                        }
-                    });
-                }
-            };
+        // Fabric API: Networking V1
+        Object handler = new ClientPlayNetworking.PlayChannelHandler() {
+            @Override
+            public void receive(
+                MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buffer,
+                PacketSender responseSender
+            ) {
+                ActiveClientConnection connection = getOrCreateClientConnection(handler);
+                NetByteBuf b = NetByteBuf.asNetByteBuf(buffer.copy());
+                client.execute(() -> {
+                    try {
+                        connection.onReceiveRawData(b);
+                        b.release();
+                    } catch (InvalidInputDataException e) {
+                        e.printStackTrace();
+                        handler.getConnection()
+                            .disconnect(Text.of("LibNetworkStack: read error (see logs for details)"));
+                    }
+                });
+            }
+        };
 
-            // Object and then cast to avoid the verifier classloading
-            ClientPlayNetworking.registerGlobalReceiver(
-                ActiveMinecraftConnection.PACKET_ID, (ClientPlayNetworking.PlayChannelHandler) handler
-            );
-        }
+        // Object and then cast to avoid the verifier classloading
+        ClientPlayNetworking.registerGlobalReceiver(
+            ActiveMinecraftConnection.PACKET_ID, (ClientPlayNetworking.PlayChannelHandler) handler
+        );
 
-        ClientTickCallback.EVENT.register(client -> onClientTick());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> onClientTick());
     }
 
     static void onClientReceivePacket(ClientPlayNetworkHandler ctx, NetByteBuf buffer) {
@@ -222,7 +204,7 @@ public class CoreMinecraftNetUtil {
                 b.release();
             } catch (InvalidInputDataException e) {
                 e.printStackTrace();
-                ctx.getConnection().disconnect(new LiteralText("LibNetworkStack: read error (see logs for details)"));
+                ctx.getConnection().disconnect(Text.of("LibNetworkStack: read error (see logs for details)"));
             }
         });
     }
@@ -266,7 +248,7 @@ public class CoreMinecraftNetUtil {
                 b.release();
             } catch (InvalidInputDataException e) {
                 e.printStackTrace();
-                ctx.disconnect(new LiteralText("LibNetworkStack: read error (see server logs for more details)\n" + e));
+                ctx.disconnect(Text.of("LibNetworkStack: read error (see server logs for more details)\n" + e));
             }
         });
     }

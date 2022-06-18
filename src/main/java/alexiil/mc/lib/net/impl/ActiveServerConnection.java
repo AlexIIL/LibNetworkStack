@@ -7,20 +7,15 @@
  */
 package alexiil.mc.lib.net.impl;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.network.PacketContext;
-
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Util;
-import net.minecraft.util.thread.ThreadExecutor;
 
 import alexiil.mc.lib.net.EnumNetSide;
 import alexiil.mc.lib.net.NetByteBuf;
-import alexiil.mc.lib.net.mixin.impl.ServerPlayNetworkHandlerAccessor;
 
 /** A connection on the server side to a specific {@link ServerPlayerEntity}. */
 public class ActiveServerConnection extends ActiveMinecraftConnection {
@@ -29,22 +24,6 @@ public class ActiveServerConnection extends ActiveMinecraftConnection {
     private long serverTick = Long.MIN_VALUE;
 
     public ActiveServerConnection(ServerPlayNetworkHandler netHandler) {
-        super(new PacketContext() {
-            @Override
-            public ThreadExecutor getTaskQueue() {
-                return ((ServerPlayNetworkHandlerAccessor) netHandler).libnetworkstack_getServer();
-            }
-
-            @Override
-            public PlayerEntity getPlayer() {
-                return netHandler.player;
-            }
-
-            @Override
-            public EnvType getPacketEnvironment() {
-                return EnvType.SERVER;
-            }
-        });
         this.netHandler = netHandler;
     }
 
