@@ -53,7 +53,7 @@ public final class NetIdData extends NetIdSeparate {
     public void send(ActiveConnection connection, IMsgDataWriter writer) {
         MessageContext.Write ctx = new MessageContext.Write(connection, this);
         validateSendingSide(ctx);
-        NetByteBuf buffer = hasFixedLength() ? NetByteBuf.buffer(totalLength) : NetByteBuf.buffer();
+        NetByteBuf buffer = hasFixedLength() ? connection.allocBuffer(totalLength) : connection.allocBuffer();
         CheckingNetByteBuf checkingBuffer = null;
         if (connection.sendTypes) {
             checkingBuffer = new CheckingNetByteBuf(buffer, NetByteBuf.buffer());

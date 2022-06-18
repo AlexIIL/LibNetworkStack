@@ -21,6 +21,7 @@ import alexiil.mc.lib.net.ActiveConnection;
 import alexiil.mc.lib.net.IMsgReadCtx;
 import alexiil.mc.lib.net.IMsgWriteCtx;
 import alexiil.mc.lib.net.InvalidInputDataException;
+import alexiil.mc.lib.net.MessageContext;
 import alexiil.mc.lib.net.NetByteBuf;
 import alexiil.mc.lib.net.NetObjectCache;
 import alexiil.mc.lib.net.NetObjectCache.IEntrySerialiser;
@@ -60,6 +61,10 @@ public final class McNetworkStack {
             @Override
             public void writeContext(NetByteBuf buffer, IMsgWriteCtx ctx, BlockEntity value) {
                 buffer.writeBlockPos(value.getPos());
+
+                if (ctx instanceof MessageContext.Write wCtx) {
+                    wCtx.__debugBlockEntity = value;
+                }
             }
         };
         ENTITY = new ParentNetIdSingle<Entity>(ROOT, Entity.class, "entity", Integer.BYTES) {
@@ -97,8 +102,7 @@ public final class McNetworkStack {
         CONTAINER = SCREEN_HANDLER;
 
         CACHE_ITEMS_WITHOUT_AMOUNT
-            = new NetObjectCache<>(ROOT.child("cache_item_stack"), new Hash.Strategy<ItemStack>()
-            {
+            = new NetObjectCache<>(ROOT.child("cache_item_stack"), new Hash.Strategy<ItemStack>() {
 
                 @Override
                 public int hashCode(ItemStack o) {

@@ -1,0 +1,15 @@
+Changes:
+
+* Bumped Minecraft requirement to 1.18.2.
+* Added "passthrough" mode to "NetByteBuf", which is useful for using "CheckingNetByteBuf"s for regular minecraft packets.
+* Added initial backend support for "NetworkDrainCleaner", a work-in-progress full network debugging tool based on LNS.
+* Added "BlockEntityInitialData.getPlayersWatching( [BlockEntity] | [ServerWorld, BlockPos] )", which is used to workaround BlockEntity data getting sent too early.
+* Changed InternalMsgUtil.wrapFullPayload to always check for packets that are too long even when "-ea" isn't specified as a JVM option.
+* Changed debug types to use a "LARGE" packet size (3 bytes for length) rather than "NORMAL" (2 bytes) 
+
+Bugfixes:
+
+* Fixed InternalMsgUtil.onReceive not catching netty's "CodecException" as well.
+* Fixed InternalMsgUtil.onReceive not allowing the usage of "ByteBuf.mark()" inside packet reading / writing
+* Fixed NetIdBase.set[Tiny|Normal|Large]Size() methods not working.
+* Improved CoreMinecraftNetUtils handling of null or invalid connections.

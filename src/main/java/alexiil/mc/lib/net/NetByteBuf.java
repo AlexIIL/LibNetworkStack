@@ -64,6 +64,20 @@ public class NetByteBuf extends PacketByteBuf {
         return asNetByteBuf(Unpooled.buffer(initialCapacity));
     }
 
+    /** @return A new {@link NetByteBuf} from {@link Unpooled#buffer()} */
+    public static NetByteBuf buffer(boolean passthrough) {
+        return asNetByteBuf(Unpooled.buffer(), passthrough);
+    }
+
+    /** @return A new {@link NetByteBuf} from {@link Unpooled#buffer(int)} */
+    public static NetByteBuf buffer(int initialCapacity, boolean passthrough) {
+        return asNetByteBuf(Unpooled.buffer(initialCapacity), passthrough);
+    }
+
+    /** If true then all {@link PacketByteBuf} override methods that this {@link NetByteBuf} optimises will instead just
+     * write using the normal minecraft methods, rather than the (potentially) optimised versions. */
+    public final boolean passthrough;
+
     // Byte-based flag access
     private int readPartialOffset = 8;// so it resets down to 0 and reads a byte on read
     private int readPartialCache;
@@ -80,17 +94,38 @@ public class NetByteBuf extends PacketByteBuf {
     private int writePartialCache;
 
     public NetByteBuf(ByteBuf wrapped) {
+        this(wrapped, false);
+    }
+
+    public NetByteBuf(ByteBuf wrapped, boolean passthrough) {
         super(wrapped);
+        this.passthrough = passthrough;
     }
 
     /** Returns the given {@link ByteBuf} as {@link NetByteBuf}. if the given instance is already a {@link NetByteBuf}
      * then the given buffer is returned (note that this may result in unexpected consequences if multiple read/write
      * Boolean methods are called on the given buffer before you called this). */
     public static NetByteBuf asNetByteBuf(ByteBuf buf) {
-        if (buf instanceof NetByteBuf) {
-            return (NetByteBuf) buf;
+        return asNetByteBuf(buf, false);
+    }
+
+    /** Returns the given {@link ByteBuf} as {@link NetByteBuf}, but with passthrough mode enabled. if the given
+     * instance is already a {@link NetByteBuf} then the given buffer is returned (note that this may result in
+     * unexpected consequences if multiple read/write Boolean methods are called on the given buffer before you called
+     * this). */
+    public static NetByteBuf asPassthroughNetByteBuf(ByteBuf buf) {
+        return asNetByteBuf(buf, true);
+    }
+
+    /** Returns the given {@link ByteBuf} as {@link NetByteBuf}, but with passthrough mode enabled. if the given
+     * instance is already a {@link NetByteBuf} then the given buffer is returned (note that this may result in
+     * unexpected consequences if multiple read/write Boolean methods are called on the given buffer before you called
+     * this). */
+    public static NetByteBuf asNetByteBuf(ByteBuf buf, boolean passthrough) {
+        if (buf instanceof NetByteBuf netBuf && netBuf.passthrough == passthrough) {
+            return netBuf;
         } else {
-            return new NetByteBuf(buf);
+            return new NetByteBuf(buf, passthrough);
         }
     }
 
@@ -106,12 +141,12 @@ public class NetByteBuf extends PacketByteBuf {
 
     @Override
     public NetByteBuf copy() {
-        return asNetByteBuf(super.copy());
+        return asNetByteBuf(super.copy(), passthrough);
     }
 
     @Override
     public NetByteBuf readBytes(int length) {
-        return asNetByteBuf(super.readBytes(length));
+        return asNetByteBuf(super.readBytes(length), passthrough);
     }
 
     @Override
@@ -173,6 +208,10 @@ public class NetByteBuf extends PacketByteBuf {
      * this method. */
     @Override
     public NetByteBuf writeBoolean(boolean flag) {
+        if (passthrough) {
+            super.writeBoolean(flag);
+            return this;
+        }
         writePartialBitsBegin();
         int toWrite = (flag ? 1 : 0) << writePartialOffset;
         writePartialCache |= toWrite;
@@ -186,6 +225,9 @@ public class NetByteBuf extends PacketByteBuf {
      * method. */
     @Override
     public boolean readBoolean() {
+        if (passthrough) {
+            return super.readBoolean();
+        }
         readPartialBitsBegin();
         int offset = 1 << readPartialOffset++;
         return (readPartialCache & offset) == offset;
@@ -351,6 +393,10 @@ public class NetByteBuf extends PacketByteBuf {
 
     @Override
     public NetByteBuf writeEnumConstant(Enum<?> value) {
+        if (passthrough) {
+            super.writeEnumConstant(value);
+            return this;
+        }
         Enum<?>[] possible = value.getDeclaringClass().getEnumConstants();
         if (possible == null) throw new IllegalArgumentException("Not an enum " + value.getClass());
         if (possible.length == 0) {
@@ -363,6 +409,9 @@ public class NetByteBuf extends PacketByteBuf {
 
     @Override
     public <E extends Enum<E>> E readEnumConstant(Class<E> enumClass) {
+        if (passthrough) {
+            return super.readEnumConstant(enumClass);
+        }
         // No need to lookup the declaring class as you cannot refer to sub-classes of Enum.
         E[] enums = enumClass.getEnumConstants();
         if (enums == null) {
@@ -382,6 +431,10 @@ public class NetByteBuf extends PacketByteBuf {
     /** Writes out a {@link BlockPos} using 3 {@link #writeVarInt(int)}s rather than {@link BlockPos#asLong()}. */
     @Override
     public NetByteBuf writeBlockPos(BlockPos pos) {
+        if (passthrough) {
+            super.writeBlockPos(pos);
+            return this;
+        }
         writeVarInt(pos.getX());
         writeVarInt(pos.getY());
         writeVarInt(pos.getZ());
@@ -391,6 +444,9 @@ public class NetByteBuf extends PacketByteBuf {
     /** Reads a {@link BlockPos} using 3 {@link #readVarInt()}s rather than {@link BlockPos#fromLong(long)}. */
     @Override
     public BlockPos readBlockPos() {
+        if (passthrough) {
+            return super.readBlockPos();
+        }
         return new BlockPos(readVarInt(), readVarInt(), readVarInt());
     }
 
@@ -406,6 +462,10 @@ public class NetByteBuf extends PacketByteBuf {
      * Unlike vanilla this doesn't use 5 bytes for all negative numbers. */
     @Override
     public NetByteBuf writeVarInt(int ival) {
+        if (passthrough) {
+            super.writeVarInt(ival);
+            return this;
+        }
         // 32 bits
         // svvvVVV VVVV
         // where:
@@ -442,6 +502,9 @@ public class NetByteBuf extends PacketByteBuf {
     /** Reads out an integer using a variable number of bytes, assuming it was written by {@link #writeVarInt(int)} */
     @Override
     public int readVarInt() {
+        if (passthrough) {
+            return super.readVarInt();
+        }
         int count = 0;
         int ival = 0;
         int read;
@@ -496,6 +559,10 @@ public class NetByteBuf extends PacketByteBuf {
     // TODO: Finish that!
     @Override
     public NetByteBuf writeVarLong(long lval) {
+        if (passthrough) {
+            super.writeVarLong(lval);
+            return this;
+        }
         // Copy-pasted from writeVarInt
         final int sign;
         if (lval < 0) {
@@ -514,6 +581,9 @@ public class NetByteBuf extends PacketByteBuf {
 
     @Override
     public long readVarLong() {
+        if (passthrough) {
+            return super.readVarLong();
+        }
         int count = 0;
         long lval = 0;
         long read;
