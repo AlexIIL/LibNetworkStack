@@ -9,15 +9,17 @@ Currently you can use this by adding this to your build.gradle:
 ```
 repositories {
     maven {
-        name = "BuildCraft"
-        url = "https://mod-buildcraft.com/maven"
+        name = "AlexIIL"
+        url = "https://maven.alexiil.uk/"
     }
 }
 
 dependencies {
-    modImplementation "alexiil.mc.lib:libnetworkstack-base:0.5.0"
+    modImplementation "alexiil.mc.lib:libnetworkstack-base:0.7.0"
 }
 ```
+
+Please use the javadoc list [here](https://alexiil.uk/javadoc) to determine the right LNS version for your minecraft version.
 
 ## Getting Started
 

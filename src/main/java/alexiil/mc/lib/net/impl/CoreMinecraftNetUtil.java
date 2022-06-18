@@ -7,7 +7,12 @@
  */
 package alexiil.mc.lib.net.impl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -16,8 +21,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -121,13 +126,11 @@ public class CoreMinecraftNetUtil {
     }
 
     public static void load() {
-        // Fabric API: Networking V1
-        // Object and then cast to avoid the verifier classloading
-        Object handler = new ServerPlayNetworking.PlayChannelHandler() {
+        ServerPlayNetworking.PlayChannelHandler handler = new ServerPlayNetworking.PlayChannelHandler() {
             @Override
             public void receive(
-                MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler,
-                PacketByteBuf buf, PacketSender responseSender
+                MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf,
+                PacketSender responseSender
             ) {
                 ActiveServerConnection connection = getServerConnection(handler);
                 if (connection == null) {
@@ -148,9 +151,7 @@ public class CoreMinecraftNetUtil {
                 });
             }
         };
-        ServerPlayNetworking.registerGlobalReceiver(
-            ActiveMinecraftConnection.PACKET_ID, (ServerPlayNetworking.PlayChannelHandler) handler
-        );
+        ServerPlayNetworking.registerGlobalReceiver(ActiveMinecraftConnection.PACKET_ID, handler);
 
         ServerTickEvents.END_SERVER_TICK.register(server -> onServerTick());
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> onServerStop());
@@ -165,8 +166,7 @@ public class CoreMinecraftNetUtil {
     }
 
     public static void loadClient() {
-        // Fabric API: Networking V1
-        Object handler = new ClientPlayNetworking.PlayChannelHandler() {
+        ClientPlayNetworking.PlayChannelHandler handler = new ClientPlayNetworking.PlayChannelHandler() {
             @Override
             public void receive(
                 MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buffer,
@@ -187,7 +187,6 @@ public class CoreMinecraftNetUtil {
             }
         };
 
-        // Object and then cast to avoid the verifier classloading
         ClientPlayNetworking.registerGlobalReceiver(
             ActiveMinecraftConnection.PACKET_ID, (ClientPlayNetworking.PlayChannelHandler) handler
         );
