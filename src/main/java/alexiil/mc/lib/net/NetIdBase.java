@@ -143,8 +143,10 @@ public abstract class NetIdBase extends TreeNetIdBase {
     public abstract NetIdBase withLargeSize();
 
     /** Changes the flags for this packet to indicate that it should never be buffered by a {@link BufferedConnection}.
-     * This means that it will arrive on the other end of the connection before other packets that don't have this flag
-     * set. Sending a lot of these "queue-skipping packets" will generally have a large impact on performance.
+     * This means that it will case {@link ActiveConnection#flushQueue()} to be called after this is sent. Please note
+     * that this <em>does</em> keep packet ordering - any previously written packets (which were buffered) will be read
+     * before this one is read. Sending a lot of these "queue-flushing packets" will generally have a large impact on
+     * performance.
      * <p>
      * Unlike all of the other flag modification methods this may be called at any time, in particular before and after
      * sending this.
@@ -173,8 +175,10 @@ public abstract class NetIdBase extends TreeNetIdBase {
     }
 
     /** Changes the flags for this packet to indicate that it should never be buffered by a {@link BufferedConnection}.
-     * This means that it will arrive on the other end of the connection before other packets that don't have this flag
-     * set. Sending a lot of these "queue-skipping packets" will generally have a large impact on performance.
+     * This means that it will case {@link ActiveConnection#flushQueue()} to be called after this is sent. Please note
+     * that this <em>does</em> keep packet ordering - any previously written packets (which were buffered) will be read
+     * before this one is read. Sending a lot of these "queue-flushing packets" will generally have a large impact on
+     * performance.
      * <p>
      * Unlike all of the other flag modification methods this may be called at any time, in particular before and after
      * sending this.

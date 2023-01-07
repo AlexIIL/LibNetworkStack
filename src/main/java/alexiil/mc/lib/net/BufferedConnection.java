@@ -13,6 +13,13 @@ import java.util.Queue;
 
 import javax.annotation.Nullable;
 
+/** An {@link ActiveConnection} which buffers packets until one of the following:
+ * <ol>
+ * <li>{@link #flushQueue()} is called</li>
+ * <li>{@link #maximumPacketSize()} is reached</li>.
+ * <li>{@link #tick()} is called, which also calls {@link #sendTickPacket()} beforehand.</li>
+ * </ol>
+ */
 public abstract class BufferedConnection extends ActiveConnection {
 
     /** The minimum accepted value for {@link #ourMaxBandwidth} and {@link #theirMaxBandwidth}, in bytes per second. */
@@ -96,7 +103,8 @@ public abstract class BufferedConnection extends ActiveConnection {
     /** Optional method for subclasses to send additional packet before the queue is flushed. */
     protected void sendTickPacket() {}
 
-    private void flushQueue() {
+    @Override
+    public void flushQueue() {
         if (!hasPackets()) {
             return;
         }

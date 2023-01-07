@@ -115,6 +115,12 @@ public abstract class ActiveConnection {
      * @param priority The priority for the packet. Will be either 0 or a negative number. */
     protected abstract void sendPacket(NetByteBuf data, int packetId, @Nullable NetIdBase netId, int priority);
 
+    /** Flushes any packet queues, if present. In LNS itself this doesn't do anything unless this is a
+     * {@link BufferedConnection} */
+    public void flushQueue() {
+        // NO-OP
+    }
+
     public void onReceiveRawData(NetByteBuf data) throws InvalidInputDataException {
         InternalMsgUtil.onReceive(this, data);
     }
