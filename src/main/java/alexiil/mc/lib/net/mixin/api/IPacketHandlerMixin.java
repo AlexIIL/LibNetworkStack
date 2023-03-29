@@ -9,8 +9,8 @@ package alexiil.mc.lib.net.mixin.api;
 
 import java.util.function.Function;
 
-import net.minecraft.network.Packet;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.packet.Packet;
 
 public interface IPacketHandlerMixin {
     int libnetworkstack_register(Class<? extends Packet<?>> klass, Function<PacketByteBuf, ? extends Packet<?>> factory);

@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.NetworkState;
-import net.minecraft.network.Packet;
+import net.minecraft.network.packet.Packet;
 
 import alexiil.mc.lib.net.impl.IPacketCustomId;
 import alexiil.mc.lib.net.mixin.api.INetworkStateMixin;
@@ -48,7 +48,7 @@ public class NetworkStateMixin implements INetworkStateMixin {
 
     @Inject(
         at = @At("HEAD"),
-        method = "getPacketId(Lnet/minecraft/network/NetworkSide;Lnet/minecraft/network/Packet;)Ljava/lang/Integer;",
+        method = "getPacketId",
         cancellable = true
     )
     private void getPacketId(NetworkSide side, Packet<?> pkt, CallbackInfoReturnable<Integer> ci) throws Exception {

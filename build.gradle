@@ -9,7 +9,7 @@ sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = "LibNetworkStack"
-version = "0.8.0"
+version = "0.9.0-pre.1+local"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
@@ -20,16 +20,16 @@ loom {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:1.19.3"
-    mappings "net.fabricmc:yarn:1.19.3+build.2:v2"
-    modImplementation "net.fabricmc:fabric-loader:0.14.11"
+    minecraft "com.mojang:minecraft:1.19.4"
+    mappings "net.fabricmc:yarn:1.19.4+build.1:v2"
+    modImplementation "net.fabricmc:fabric-loader:0.14.18"
 
     //Fabric api
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.68.1+1.19.3"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.76.0+1.19.4"
 
     // Misc
     compileOnly "com.google.code.findbugs:jsr305:3.0.1"
-    testImplementation "junit:junit:4.12"
+    testImplementation "junit:junit:4.13.1"
 }
 
 compileJava {

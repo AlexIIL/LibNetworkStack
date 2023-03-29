@@ -8,7 +8,7 @@
 package alexiil.mc.lib.net.impl;
 
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.Packet;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.util.Identifier;
 
 import alexiil.mc.lib.net.BufferedConnection;
