@@ -1,0 +1,4 @@
+Changes:
+
+*  Make BufferedConnection.flushQueue public, and fix the documentation for NetIdBase#withoutBuffering to be correct.
+   (Packet write order is always kept)
