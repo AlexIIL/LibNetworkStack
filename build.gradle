@@ -9,7 +9,7 @@ sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = "LibNetworkStack"
-version = "0.7.1"
+version = "0.7.2"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
