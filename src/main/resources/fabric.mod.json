@@ -23,7 +23,9 @@
     "libnetworkstack.common.json"
   ],
   "custom": {
-    "modmenu:api": true
+    "modmenu": {
+      "badges": ["library"]
+    }
   },
   "icon": "assets/libnetworkstack/icon.png",
   "authors": [ "AlexIIL" ],
