@@ -108,7 +108,7 @@ public class CoreMinecraftNetUtil {
         }
         if (player instanceof ServerPlayerEntity) {
             return getServerConnection(((ServerPlayerEntity) player).networkHandler);
-        } else if (player.world.isClient) {
+        } else if (player.getWorld().isClient) {
             ClientPlayerEntity clientPlayer = MinecraftClient.getInstance().player;
             if (clientPlayer == null) {
                 throw new IllegalStateException(

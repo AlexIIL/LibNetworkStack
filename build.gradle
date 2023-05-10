@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.0-SNAPSHOT'
+    id 'fabric-loom' version '1.2-SNAPSHOT'
     id 'org.cadixdev.licenser' version '0.6.1'
 }
 
@@ -9,7 +9,7 @@ sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = "LibNetworkStack"
-version = "0.9.0"
+version = "0.10.0-pre.1"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
@@ -20,12 +20,12 @@ loom {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:1.19.4"
-    mappings "net.fabricmc:yarn:1.19.4+build.1:v2"
-    modImplementation "net.fabricmc:fabric-loader:0.14.18"
+    minecraft "com.mojang:minecraft:1.20-pre1"
+    mappings "net.fabricmc:yarn:1.20-pre1+build.4:v2"
+    modImplementation "net.fabricmc:fabric-loader:0.14.19"
 
     //Fabric api
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.76.0+1.19.4"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.80.2+1.20"
 
     // Misc
     compileOnly "com.google.code.findbugs:jsr305:3.0.1"

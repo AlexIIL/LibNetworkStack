@@ -55,7 +55,7 @@ public final class McNetworkStack {
             public BlockEntity readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 ActiveMinecraftConnection mcConn = (ActiveMinecraftConnection) ctx.getConnection();
                 PlayerEntity player = mcConn.getPlayer();
-                return player.world.getBlockEntity(buffer.readBlockPos());
+                return player.getWorld().getBlockEntity(buffer.readBlockPos());
             }
 
             @Override
@@ -72,7 +72,7 @@ public final class McNetworkStack {
             public Entity readContext(NetByteBuf buffer, IMsgReadCtx ctx) throws InvalidInputDataException {
                 ActiveMinecraftConnection mcConn = (ActiveMinecraftConnection) ctx.getConnection();
                 PlayerEntity player = mcConn.getPlayer();
-                return player.world.getEntityById(buffer.readInt());
+                return player.getWorld().getEntityById(buffer.readInt());
             }
 
             @Override
