@@ -7,6 +7,8 @@
  */
 package alexiil.mc.lib.net.mixin.impl;
 
+import java.util.List;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,6 +28,7 @@ import alexiil.mc.lib.net.impl.BlockEntityInitialData;
 @Mixin(ChunkHolder.class)
 public abstract class ChunkHolderMixin {
 
+    private static final String LIST = "Ljava/util/List;";
     private static final String WORLD = "Lnet/minecraft/world/World;";
     private static final String BLOCK_POS = "Lnet/minecraft/util/math/BlockPos;";
     private static final String BLOCK_ENTITY = "Lnet/minecraft/block/entity/BlockEntity;";
@@ -36,12 +39,12 @@ public abstract class ChunkHolderMixin {
     @Shadow
     private ChunkPos pos;
 
-    @Inject(at = @At("RETURN"), method = "sendBlockEntityUpdatePacket(" + WORLD + BLOCK_POS + ")V",
+    @Inject(at = @At("RETURN"), method = "sendBlockEntityUpdatePacket(" + LIST + WORLD + BLOCK_POS + ")V",
         locals = LocalCapture.CAPTURE_FAILHARD)
-    void sendCustomUpdatePacket(World world, BlockPos pos, CallbackInfo ci, BlockEntity be) {
+    void sendCustomUpdatePacket(List<ServerPlayerEntity> players, World world, BlockPos pos, CallbackInfo ci, BlockEntity be) {
 
         if (be instanceof BlockEntityInitialData dataBe) {
-            for (ServerPlayerEntity player : playersWatchingChunkProvider.getPlayersWatchingChunk(this.pos, false)) {
+            for (ServerPlayerEntity player : players) {
                 dataBe.sendInitialData(player);
             }
         }
