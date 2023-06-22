@@ -132,7 +132,7 @@ public class CheckingNetByteBuf extends NetByteBuf {
 
         /** Not a data type. Instead this is used to record positional information by the sender via
          * {@link NetByteBuf#writeMarker(String)} */
-        CUSTOM_MARKER((buf, to) -> to.append("- \"").append(buf.wrapped.readString()).append("\"")),
+        CUSTOM_MARKER((buf, to) -> to.append("- \"").append(buf.typeBuffer.readString()).append("\"")),
 
         __UNUSED__1(null),
         __UNUSED__2(null),
@@ -878,20 +878,25 @@ public class CheckingNetByteBuf extends NetByteBuf {
     }
 
     @Override
-    public void readMarker(String id) throws InvalidInputDataException {
+    public void readMarker(String id) {
         validateRead(NetMethod.CUSTOM_MARKER);
-        String read = wrapped.readString();
+        if (!recordReads && typeBuffer != null) {
+            String read = typeBuffer.readString();
+            if (!id.equals(read)) {
+                throw new InvalidNetTypeException(NetMethod.CUSTOM_MARKER, countRead - 1, read, id);
+            }
+        }
         recordRead(NetMethod.CUSTOM_MARKER);
-        if (!id.equals(read)) {
-            throw new InvalidInputDataException(
-                "Marker ID didn't match: expected '" + id + "', but read '" + read + "'"
-            );
+        if (recordReads && typeBuffer != null) {
+            typeBuffer.writeString(id);
         }
     }
 
     @Override
     public void writeMarker(String id) {
         write(NetMethod.CUSTOM_MARKER);
-        wrapped.writeString(id);
+        if (typeBuffer != null) {
+            typeBuffer.writeString(id);
+        }
     }
 }
