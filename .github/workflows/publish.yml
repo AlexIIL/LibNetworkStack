@@ -35,7 +35,7 @@ jobs:
       name: 'Build'
       run: './gradlew build'
     - id: 'publish'
-      name: 'Build'
+      name: 'Publish'
       run: './gradlew publish uploadJavadoc'
       env:
         UPLOAD_MAVEN_URL: ${{ secrets.UPLOAD_MAVEN_URL }}
