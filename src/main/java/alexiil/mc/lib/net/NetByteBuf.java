@@ -22,7 +22,7 @@ import net.minecraft.util.math.MathHelper;
  * single bit to the stream, and auto-compacting it with similar bits into a single byte.
  * <p>
  * In addition this overrides a number of existing methods (like {@link #writeBoolean(boolean)},
- * {@link #writeEnumConstant(Enum)}, {@link #writeVarInt(int)}, {@link #writeVarLong(long)} */
+ * {@link #writeEnumConstant(Enum)}, {@link #writeVarInt(int)}, {@link #writeVarLong(long)}, and a few more. */
 public class NetByteBuf extends PacketByteBuf {
 
     public static final class SavedReaderIndex {
