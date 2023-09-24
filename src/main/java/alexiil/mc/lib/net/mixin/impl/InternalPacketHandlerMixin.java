@@ -23,12 +23,12 @@ import alexiil.mc.lib.net.mixin.api.IPacketHandlerMixin;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
-@Mixin(targets = "net.minecraft.network.NetworkState$PacketHandler")
-abstract class PacketHandlerMixin<T extends PacketListener> implements IPacketHandlerMixin {
+@Mixin(targets = "net.minecraft.network.NetworkState$InternalPacketHandler")
+abstract class InternalPacketHandlerMixin<T extends PacketListener> implements IPacketHandlerMixin {
 
     @Final
     @Shadow
-    private Object2IntMap<Class<? extends Packet<T>>> packetIds;
+    Object2IntMap<Class<? extends Packet<T>>> packetIds;
 
     @Final
     @Shadow

@@ -3,10 +3,11 @@
   "package": "alexiil.mc.lib.net.mixin.impl",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "ChunkDataSenderMixin",
     "ChunkHolderMixin",
     "NetworkStateMixin",
-    "PacketHandlerMixin",
-    "ServerPlayNetworkHandlerAccessor",
+    "InternalPacketHandlerMixin",
+    "ServerCommonNetworkHandlerAccessor",
     "ThreadedAnvilChunkStorageMixin"
   ],
   "injectors": {
