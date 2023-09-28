@@ -17,6 +17,7 @@ license {
 }
 
 loom {
+    accessWidenerPath = file("src/main/resources/libnetworkstack.accesswidener")
 }
 
 dependencies {

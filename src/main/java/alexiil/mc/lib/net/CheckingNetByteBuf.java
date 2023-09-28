@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 
 import io.netty.buffer.ByteBuf;
 
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtTagSizeTracker;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -106,7 +106,7 @@ public class CheckingNetByteBuf extends NetByteBuf {
             to.append("  type = ").append(hit.getType()).append("\n");
             to.append("  is inside = ").append(hit.isInsideBlock());
         }),
-        COMPOUND_TAG((buf, to) -> to.append("nbt: ").append(buf.wrapped.readNbt())),
+        NBT_ELEMENT((buf, to) -> to.append("nbt: ").append(buf.wrapped.readNbt())),
         STRING((buf, to) -> to.append("string: \"").append(buf.wrapped.readString()).append("\"")),
         ENUM((buf, to) -> {
             if (buf.passthrough) {
@@ -678,16 +678,16 @@ public class CheckingNetByteBuf extends NetByteBuf {
     }
 
     @Override
-    public NbtCompound readNbt(NbtTagSizeTracker sizeTracker) {
-        validateRead(NetMethod.COMPOUND_TAG);
-        NbtCompound val = wrapped.readNbt(sizeTracker);
-        recordRead(NetMethod.COMPOUND_TAG);
+    public NbtElement readNbt(NbtTagSizeTracker sizeTracker) {
+        validateRead(NetMethod.NBT_ELEMENT);
+        NbtElement val = wrapped.readNbt(sizeTracker);
+        recordRead(NetMethod.NBT_ELEMENT);
         return val;
     }
 
     @Override
-    public CheckingNetByteBuf writeNbt(NbtCompound compoundTag) {
-        write(NetMethod.COMPOUND_TAG);
+    public CheckingNetByteBuf writeNbt(NbtElement compoundTag) {
+        write(NetMethod.NBT_ELEMENT);
         wrapped.writeNbt(compoundTag);
         return this;
     }

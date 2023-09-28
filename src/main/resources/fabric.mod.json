@@ -22,6 +22,7 @@
     "libnetworkstack.client.json",
     "libnetworkstack.common.json"
   ],
+  "accessWidener": "libnetworkstack.accesswidener",
   "custom": {
     "modmenu": {
       "badges": ["library"]

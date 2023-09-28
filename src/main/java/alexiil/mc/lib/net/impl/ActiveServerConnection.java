@@ -7,9 +7,10 @@
  */
 package alexiil.mc.lib.net.impl;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Util;
@@ -29,7 +30,7 @@ public class ActiveServerConnection extends ActiveMinecraftConnection {
 
     @Override
     protected Packet<?> toNormalPacket(NetByteBuf data) {
-        return new CustomPayloadS2CPacket(PACKET_ID, data);
+        return ServerPlayNetworking.createS2CPacket(PACKET_ID, data);
     }
 
     @Override

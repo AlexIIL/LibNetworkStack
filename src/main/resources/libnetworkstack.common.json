@@ -5,8 +5,9 @@
   "mixins": [
     "ChunkDataSenderMixin",
     "ChunkHolderMixin",
-    "NetworkStateMixin",
     "InternalPacketHandlerMixin",
+    "NetworkStateMixin",
+    "PacketHandlerMixin",
     "ServerCommonNetworkHandlerAccessor",
     "ThreadedAnvilChunkStorageMixin"
   ],

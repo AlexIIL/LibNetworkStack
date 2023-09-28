@@ -10,6 +10,7 @@ package alexiil.mc.lib.net.mixin.impl;
 import java.util.List;
 import java.util.function.Function;
 
+import net.minecraft.network.NetworkState;
 import net.minecraft.network.PacketByteBuf;
 import org.apache.logging.log4j.LogManager;
 import org.spongepowered.asm.mixin.Final;
@@ -19,12 +20,12 @@ import org.spongepowered.asm.mixin.Shadow;
 import net.minecraft.network.listener.PacketListener;
 import net.minecraft.network.packet.Packet;
 
-import alexiil.mc.lib.net.mixin.api.IPacketHandlerMixin;
+import alexiil.mc.lib.net.mixin.api.IInternalPacketHandlerMixin;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
-@Mixin(targets = "net.minecraft.network.NetworkState$InternalPacketHandler")
-abstract class InternalPacketHandlerMixin<T extends PacketListener> implements IPacketHandlerMixin {
+@Mixin(NetworkState.InternalPacketHandler.class)
+abstract class InternalPacketHandlerMixin<T extends PacketListener> implements IInternalPacketHandlerMixin {
 
     @Final
     @Shadow

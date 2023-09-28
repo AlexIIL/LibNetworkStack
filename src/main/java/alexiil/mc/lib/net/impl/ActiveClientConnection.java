@@ -7,12 +7,13 @@
  */
 package alexiil.mc.lib.net.impl;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.play.CustomPayloadC2SPacket;
 import net.minecraft.util.Util;
 
 import alexiil.mc.lib.net.EnumNetSide;
@@ -45,7 +46,7 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
 
     @Override
     protected Packet<?> toNormalPacket(NetByteBuf data) {
-        return new CustomPayloadC2SPacket(PACKET_ID, data);
+        return ClientPlayNetworking.createC2SPacket(PACKET_ID, data);
     }
 
     @Override
