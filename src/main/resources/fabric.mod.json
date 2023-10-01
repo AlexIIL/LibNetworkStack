@@ -18,6 +18,9 @@
     "fabricloader": ">=0.4.0",
     "fabric": "*"
   },
+  "breaks": {
+    "chunksending": "*"
+  },
   "mixins": [
     "libnetworkstack.client.json",
     "libnetworkstack.common.json"
