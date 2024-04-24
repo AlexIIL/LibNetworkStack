@@ -15,6 +15,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 
 import alexiil.mc.lib.net.NetObjectCache.IEntrySerialiser;
+import alexiil.mc.lib.net.impl.IdentityHashStrategy;
 
 import it.unimi.dsi.fastutil.Hash.Strategy;
 
@@ -25,7 +26,7 @@ public class NetObjectCacheSimple<T> extends NetObjectCacheBase<T> {
     }
 
     public NetObjectCacheSimple(Map<String, T> map, Function<T, String> reverse) {
-        super(Util.identityHashStrategy(), new IEntrySerialiser<T>() {
+        super(IdentityHashStrategy.getInstance(), new IEntrySerialiser<T>() {
             @Override
             public void write(T obj, ActiveConnection connection, NetByteBuf buffer) {
                 buffer.writeString(reverse.apply(obj));
@@ -46,7 +47,7 @@ public class NetObjectCacheSimple<T> extends NetObjectCacheBase<T> {
     public static <T> NetObjectCacheSimple<T> createMappedIdentifier(
         Map<Identifier, T> map, Function<T, Identifier> reverse
     ) {
-        return new NetObjectCacheSimple<>(Util.identityHashStrategy(), new IEntrySerialiser<T>() {
+        return new NetObjectCacheSimple<>(IdentityHashStrategy.getInstance(), new IEntrySerialiser<T>() {
             @Override
             public void write(T obj, ActiveConnection connection, NetByteBuf buffer) {
                 buffer.writeIdentifier(reverse.apply(obj));
@@ -67,7 +68,7 @@ public class NetObjectCacheSimple<T> extends NetObjectCacheBase<T> {
     public static <T> NetObjectCacheSimple<T> createPartiallyMappedIdentifier(
         Map<Identifier, T> map, Function<T, Identifier> reverse
     ) {
-        return new NetObjectCacheSimple<>(Util.identityHashStrategy(), new IEntrySerialiser<T>() {
+        return new NetObjectCacheSimple<>(IdentityHashStrategy.getInstance(), new IEntrySerialiser<T>() {
             @Override
             public void write(T obj, ActiveConnection connection, NetByteBuf buffer) {
                 buffer.writeIdentifier(reverse.apply(obj));
@@ -86,7 +87,7 @@ public class NetObjectCacheSimple<T> extends NetObjectCacheBase<T> {
     }
 
     public static NetObjectCacheSimple<Identifier> createIdentifierSet(Set<Identifier> set) {
-        return new NetObjectCacheSimple<>(Util.identityHashStrategy(), new IEntrySerialiser<Identifier>() {
+        return new NetObjectCacheSimple<>(IdentityHashStrategy.getInstance(), new IEntrySerialiser<Identifier>() {
             @Override
             public void write(Identifier obj, ActiveConnection connection, NetByteBuf buffer) {
                 buffer.writeIdentifier(obj);

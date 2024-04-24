@@ -30,7 +30,9 @@ public class ActiveServerConnection extends ActiveMinecraftConnection {
 
     @Override
     protected Packet<?> toNormalPacket(NetByteBuf data) {
-        return ServerPlayNetworking.createS2CPacket(PACKET_ID, data);
+        byte[] bytes = new byte[data.readableBytes()];
+        data.readBytes(bytes);
+        return ServerPlayNetworking.createS2CPacket(new NormalPacketPayload(bytes));
     }
 
     @Override

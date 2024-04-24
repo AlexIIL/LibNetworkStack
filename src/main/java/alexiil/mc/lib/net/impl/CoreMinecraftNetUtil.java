@@ -16,25 +16,30 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
+import io.netty.buffer.Unpooled;
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.NetworkSide;
-import net.minecraft.network.NetworkState;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.network.NetworkStateBuilder;
+import net.minecraft.network.RegistryByteBuf;
+import net.minecraft.network.listener.ClientPlayPacketListener;
+import net.minecraft.network.listener.ServerPlayPacketListener;
+import net.minecraft.network.packet.PacketType;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -45,7 +50,6 @@ import net.minecraft.world.World;
 import alexiil.mc.lib.net.InvalidInputDataException;
 import alexiil.mc.lib.net.LibNetworkStack;
 import alexiil.mc.lib.net.NetByteBuf;
-import alexiil.mc.lib.net.mixin.api.INetworkStateMixin;
 
 public class CoreMinecraftNetUtil {
 
@@ -128,76 +132,89 @@ public class CoreMinecraftNetUtil {
     }
 
     public static void load() {
-        ServerPlayNetworking.PlayChannelHandler handler = new ServerPlayNetworking.PlayChannelHandler() {
-            @Override
-            public void receive(
-                MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf,
-                PacketSender responseSender
-            ) {
-                ActiveServerConnection connection = getServerConnection(handler);
-                if (connection == null) {
-                    return;
-                }
+        if (LibNetworkStack.DEBUG) {
+            LibNetworkStack.LOGGER.info("Loading CoreMinecraftNetUtil...");
+        }
+        
+        PayloadTypeRegistry.playC2S().register(NormalPacketPayload.ID, NormalPacketPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(NormalPacketPayload.ID, NormalPacketPayload.CODEC);
 
-                NetByteBuf b = NetByteBuf.asNetByteBuf(buf.copy());
-                server.execute(() -> {
-                    try {
-                        connection.onReceiveRawData(b);
-                        b.release();
-                    } catch (InvalidInputDataException e) {
-                        e.printStackTrace();
-                        handler.disconnect(
-                            Text.of("LibNetworkStack: read error (see server logs for more details)\n" + e)
-                        );
-                    }
-                });
+        ServerPlayNetworking.registerGlobalReceiver(NormalPacketPayload.ID, (payload, context) -> {
+            ActiveServerConnection connection = getServerConnection(context.player().networkHandler);
+            if (connection == null) {
+                return;
             }
-        };
-        ServerPlayNetworking.registerGlobalReceiver(ActiveMinecraftConnection.PACKET_ID, handler);
+
+            NetByteBuf b = NetByteBuf.asNetByteBuf(Unpooled.wrappedBuffer(payload.payload()));
+            // on fabric, PLAY receivers run on main threads
+            try {
+                connection.onReceiveRawData(b);
+            } catch (InvalidInputDataException e) {
+                e.printStackTrace();
+                context.responseSender().disconnect(
+                    Text.of("LibNetworkStack: read error (see server logs for more details)\n" + e)
+                );
+            } finally {
+                b.release();
+            }
+        });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> onServerTick());
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> onServerStop());
+    }
 
-        INetworkStateMixin play = (INetworkStateMixin) (Object) NetworkState.PLAY;
-        clientExpectedId = play.libnetworkstack_registerPacket(
-            NetworkSide.CLIENTBOUND, CompactDataPacketToClient.class, CompactDataPacketToClient::new
-        );
-        serverExpectedId = play.libnetworkstack_registerPacket(
-            NetworkSide.SERVERBOUND, CompactDataPacketToServer.class, CompactDataPacketToServer::new
-        );
+    public static void addToServerPackets(NetworkStateBuilder<ServerPlayPacketListener, RegistryByteBuf> builder) {
+        if (LibNetworkStack.DEBUG) {
+            LibNetworkStack.LOGGER.info("Adding CompactDataPacketToServer...");
+        }
+        builder.add(CompactDataPacketToServer.TYPE, CompactDataPacketToServer.CODEC);
+    }
+
+    public static void addToClientPackets(NetworkStateBuilder<ClientPlayPacketListener, RegistryByteBuf> builder) {
+        if (LibNetworkStack.DEBUG) {
+            LibNetworkStack.LOGGER.info("Adding CompactDataPacketToClient...");
+        }
+        builder.add(CompactDataPacketToClient.TYPE, CompactDataPacketToClient.CODEC);
+    }
+
+    public static void setExpectedIds(Object2IntMap<PacketType<?>> packetTypeIds) {
+        if (packetTypeIds.containsKey(CompactDataPacketToClient.TYPE)) {
+            if (LibNetworkStack.DEBUG) {
+                LibNetworkStack.LOGGER.info("Extracting CompactDataPacketToClient id...");
+            }
+            clientExpectedId = packetTypeIds.getInt(CompactDataPacketToClient.TYPE);
+        }
+        if (packetTypeIds.containsKey(CompactDataPacketToServer.TYPE)) {
+            if (LibNetworkStack.DEBUG) {
+                LibNetworkStack.LOGGER.info("Extracting CompactDataPacketToServer id...");
+            }
+            serverExpectedId = packetTypeIds.getInt(CompactDataPacketToServer.TYPE);
+        }
     }
 
     @Environment(EnvType.CLIENT)
     public static void loadClient() {
-        ClientPlayNetworking.PlayChannelHandler handler = new ClientPlayNetworking.PlayChannelHandler() {
-            @Override
-            public void receive(
-                MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buffer,
-                PacketSender responseSender
-            ) {
-                ActiveClientConnection connection = getOrCreateClientConnection(handler);
-                NetByteBuf b = NetByteBuf.asNetByteBuf(buffer.copy());
-                client.execute(() -> {
-                    try {
-                        connection.onReceiveRawData(b);
-                        b.release();
-                    } catch (InvalidInputDataException e) {
-                        e.printStackTrace();
-                        handler.getConnection()
-                            .disconnect(Text.of("LibNetworkStack: read error (see logs for details)"));
-                    }
-                });
+        ClientPlayNetworking.registerGlobalReceiver(NormalPacketPayload.ID, (payload, context) -> {
+            ActiveClientConnection connection = getOrCreateClientConnection(context.player().networkHandler);
+            
+            NetByteBuf b = NetByteBuf.asNetByteBuf(Unpooled.wrappedBuffer(payload.payload()));
+            // on fabric, PLAY receivers run on main threads
+            try {
+                connection.onReceiveRawData(b);
+                b.release();
+            } catch (InvalidInputDataException e) {
+                e.printStackTrace();
+                context.responseSender()
+                    .disconnect(Text.of("LibNetworkStack: read error (see logs for details)"));
             }
-        };
-
-        ClientPlayNetworking.registerGlobalReceiver(
-            ActiveMinecraftConnection.PACKET_ID, (ClientPlayNetworking.PlayChannelHandler) handler
-        );
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> onClientTick());
     }
 
-    static void onClientReceivePacket(ClientPlayNetworkHandler ctx, NetByteBuf buffer) {
+    @Environment(EnvType.CLIENT)
+    static void onClientReceivePacket(ClientPlayPacketListener listener, NetByteBuf buffer) {
+        if (!(listener instanceof ClientPlayNetworkHandler ctx)) return;
         ActiveClientConnection connection = getOrCreateClientConnection(ctx);
         NetByteBuf b = buffer.copy();
         MinecraftClient.getInstance().execute(() -> {
@@ -211,8 +228,10 @@ public class CoreMinecraftNetUtil {
         });
     }
 
-    /** @return The current client connection. Throws an exception if this is not available right now (likely because
-     *         the client hasn't joined a world). */
+    /**
+     * @return The current client connection. Throws an exception if this is not available right now (likely because
+     * the client hasn't joined a world).
+     */
     public static ActiveClientConnection getClientConnection() {
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
         if (player == null) {
@@ -221,7 +240,9 @@ public class CoreMinecraftNetUtil {
         return getOrCreateClientConnection(player.networkHandler);
     }
 
-    /** @return The current {@link ActiveClientConnection}, or null if one has not been created yet. */
+    /**
+     * @return The current {@link ActiveClientConnection}, or null if one has not been created yet.
+     */
     @Nullable
     public static ActiveClientConnection getCurrentClientConnection() {
         return currentClientConnection;
@@ -237,7 +258,8 @@ public class CoreMinecraftNetUtil {
         return connection;
     }
 
-    static void onServerReceivePacket(ServerPlayNetworkHandler ctx, NetByteBuf buffer) {
+    static void onServerReceivePacket(ServerPlayPacketListener listener, NetByteBuf buffer) {
+        if (!(listener instanceof ServerPlayNetworkHandler ctx)) return;
         ActiveServerConnection connection = getServerConnection(ctx);
         if (connection == null) {
             return;

@@ -46,7 +46,9 @@ public class ActiveClientConnection extends ActiveMinecraftConnection {
 
     @Override
     protected Packet<?> toNormalPacket(NetByteBuf data) {
-        return ClientPlayNetworking.createC2SPacket(PACKET_ID, data);
+        byte[] bytes = new byte[data.readableBytes()];
+        data.readBytes(bytes);
+        return ClientPlayNetworking.createC2SPacket(new NormalPacketPayload(bytes));
     }
 
     @Override

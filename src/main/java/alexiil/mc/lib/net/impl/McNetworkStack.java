@@ -10,11 +10,17 @@ package alexiil.mc.lib.net.impl;
 import java.util.Objects;
 
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.component.ComponentChanges;
+import net.minecraft.component.ComponentMap;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.RegistryByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenHandler;
 
 import alexiil.mc.lib.net.ActiveConnection;
@@ -106,7 +112,7 @@ public final class McNetworkStack {
 
                 @Override
                 public int hashCode(ItemStack o) {
-                    return Objects.hash(new Object[] { o.getItem(), o.getNbt() });
+                    return Objects.hash(new Object[] { o.getItem(), o.getComponents() });
                 }
 
                 @Override
@@ -117,8 +123,8 @@ public final class McNetworkStack {
                     if (a.getItem() != b.getItem()) {
                         return false;
                     }
-                    NbtCompound tagA = a.getNbt();
-                    NbtCompound tagB = b.getNbt();
+                    ComponentMap tagA = a.getComponents();
+                    ComponentMap tagB = b.getComponents();
                     if (tagA == null || tagB == null) {
                         return tagA == tagB;
                     }
@@ -126,6 +132,9 @@ public final class McNetworkStack {
                 }
 
             }, new IEntrySerialiser<ItemStack>() {
+           
+                private static final PacketCodec<RegistryByteBuf, RegistryEntry<Item>> ITEM_PACKET_CODEC =
+                    PacketCodecs.registryEntry(RegistryKeys.ITEM);
 
                 @Override
                 public void write(ItemStack obj, ActiveConnection connection, NetByteBuf buffer) {
@@ -133,13 +142,9 @@ public final class McNetworkStack {
                         buffer.writeBoolean(false);
                     } else {
                         buffer.writeBoolean(true);
-                        Item item_1 = obj.getItem();
-                        buffer.writeVarInt(Item.getRawId(item_1));
-                        NbtCompound tag = null;
-                        if (item_1.isDamageable() || item_1.isNbtSynced()) {
-                            tag = obj.getNbt();
-                        }
-                        buffer.writeNbt(tag);
+                        RegistryByteBuf wrapped = new RegistryByteBuf(buffer, connection.getPlayer().getWorld().getRegistryManager());
+                        ITEM_PACKET_CODEC.encode(wrapped, obj.getRegistryEntry());
+                        ComponentChanges.PACKET_CODEC.encode(wrapped, obj.getComponentChanges());
                     }
                 }
 
@@ -148,10 +153,10 @@ public final class McNetworkStack {
                     if (!buffer.readBoolean()) {
                         return ItemStack.EMPTY;
                     } else {
-                        int id = buffer.readVarInt();
-                        ItemStack stack = new ItemStack(Item.byRawId(id));
-                        stack.setNbt(buffer.readNbt());
-                        return stack;
+                        RegistryByteBuf wrapped = new RegistryByteBuf(buffer, connection.getPlayer().getWorld().getRegistryManager());
+                        RegistryEntry<Item> itemRegistryEntry = ITEM_PACKET_CODEC.decode(wrapped);
+                        ComponentChanges componentChanges = ComponentChanges.PACKET_CODEC.decode(wrapped);
+                        return new ItemStack(itemRegistryEntry, 1, componentChanges);
                     }
                 }
             });

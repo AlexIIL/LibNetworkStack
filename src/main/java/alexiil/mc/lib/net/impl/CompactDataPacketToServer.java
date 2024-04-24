@@ -9,12 +9,22 @@ package alexiil.mc.lib.net.impl;
 
 import io.netty.buffer.Unpooled;
 
+import net.minecraft.network.NetworkSide;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.listener.ServerPlayPacketListener;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.PacketType;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 
 import alexiil.mc.lib.net.NetByteBuf;
 
-public class CompactDataPacketToServer implements IPacketCustomId<ServerPlayNetworkHandler> {
+public class CompactDataPacketToServer implements IPacketCustomId<ServerPlayPacketListener> {
+    
+    public static final PacketCodec<PacketByteBuf, CompactDataPacketToServer> CODEC =
+        PacketCodec.of(CompactDataPacketToServer::write, CompactDataPacketToServer::new);
+    public static final PacketType<CompactDataPacketToServer> TYPE =
+        new PacketType<>(NetworkSide.SERVERBOUND, ActiveMinecraftConnection.PACKET_ID);
 
     private final int clientExpectedId;
     private byte[] payload;
@@ -37,12 +47,16 @@ public class CompactDataPacketToServer implements IPacketCustomId<ServerPlayNetw
     }
 
     @Override
+    public PacketType<? extends Packet<ServerPlayPacketListener>> getPacketId() {
+        return TYPE;
+    }
+
     public void write(PacketByteBuf buf) {
         buf.writeBytes(payload);
     }
 
     @Override
-    public void apply(ServerPlayNetworkHandler netHandler) {
+    public void apply(ServerPlayPacketListener netHandler) {
         NetByteBuf buffer = NetByteBuf.asNetByteBuf(Unpooled.wrappedBuffer(payload));
         CoreMinecraftNetUtil.onServerReceivePacket(netHandler, buffer);
         buffer.release();

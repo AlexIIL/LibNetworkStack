@@ -1,34 +1,30 @@
 plugins {
-    id 'fabric-loom' version '1.3-SNAPSHOT'
+    id 'fabric-loom' version '1.6-SNAPSHOT'
     id 'org.cadixdev.licenser' version '0.6.1'
 }
 
 apply plugin: 'maven-publish' // for uploading to a maven repo
 
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
+sourceCompatibility = JavaVersion.VERSION_21
+targetCompatibility = JavaVersion.VERSION_21
 
 archivesBaseName = "LibNetworkStack"
-version = "0.11.0-pre.1"
+version = "0.12.0-pre.1"
 
 license {
     header = project.file('misc/LICENSE_HEADER.txt');
     newLine = false;
 }
 
-loom {
-    accessWidenerPath = file("src/main/resources/libnetworkstack.accesswidener")
-}
-
 dependencies {
-    minecraft "com.mojang:minecraft:1.20.2"
-    mappings "net.fabricmc:yarn:1.20.2+build.1:v2"
-    modCompileOnly "net.fabricmc:fabric-loader:0.14.22"
-    modLocalRuntime "net.fabricmc:fabric-loader:0.14.22"
+    minecraft "com.mojang:minecraft:1.20.5"
+    mappings "net.fabricmc:yarn:1.20.5+build.1:v2"
+    modCompileOnly "net.fabricmc:fabric-loader:0.15.9"
+    modLocalRuntime "net.fabricmc:fabric-loader:0.15.9"
 
     //Fabric api
-    modCompileOnly "net.fabricmc.fabric-api:fabric-api:0.89.1+1.20.2"
-    modLocalRuntime "net.fabricmc.fabric-api:fabric-api:0.89.1+1.20.2"
+    modCompileOnly "net.fabricmc.fabric-api:fabric-api:0.97.6+1.20.5"
+    modLocalRuntime "net.fabricmc.fabric-api:fabric-api:0.97.6+1.20.5"
 
     // Misc
     compileOnly "com.google.code.findbugs:jsr305:3.0.1"
@@ -56,8 +52,8 @@ build.dependsOn(javadoc);
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
 
-    // Minecraft 1.18 upwards uses Java 17.
-    it.options.release = 17
+    // Minecraft 1.20.5 upwards uses Java 21.
+    it.options.release = 21
 }
 
 java.withSourcesJar()

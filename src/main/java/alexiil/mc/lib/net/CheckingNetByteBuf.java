@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 import io.netty.buffer.ByteBuf;
 
 import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtTagSizeTracker;
+import net.minecraft.nbt.NbtSizeTracker;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -678,7 +678,7 @@ public class CheckingNetByteBuf extends NetByteBuf {
     }
 
     @Override
-    public NbtElement readNbt(NbtTagSizeTracker sizeTracker) {
+    public NbtElement readNbt(NbtSizeTracker sizeTracker) {
         validateRead(NetMethod.NBT_ELEMENT);
         NbtElement val = wrapped.readNbt(sizeTracker);
         recordRead(NetMethod.NBT_ELEMENT);

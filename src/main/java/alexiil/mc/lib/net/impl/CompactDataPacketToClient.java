@@ -7,16 +7,24 @@
  */
 package alexiil.mc.lib.net.impl;
 
-import java.io.IOException;
-
 import io.netty.buffer.Unpooled;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.network.NetworkSide;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.listener.ClientPlayPacketListener;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.PacketType;
 
 import alexiil.mc.lib.net.NetByteBuf;
 
-public class CompactDataPacketToClient implements IPacketCustomId<ClientPlayNetworkHandler> {
+public class CompactDataPacketToClient implements IPacketCustomId<ClientPlayPacketListener> {
+    
+    public static final PacketCodec<PacketByteBuf, CompactDataPacketToClient> CODEC =
+        PacketCodec.of(CompactDataPacketToClient::write, CompactDataPacketToClient::new);
+    public static final PacketType<CompactDataPacketToClient> TYPE =
+        new PacketType<>(NetworkSide.CLIENTBOUND, ActiveMinecraftConnection.PACKET_ID);
 
     private final int serverExpectedId;
     private byte[] payload;
@@ -39,12 +47,16 @@ public class CompactDataPacketToClient implements IPacketCustomId<ClientPlayNetw
     }
 
     @Override
+    public PacketType<? extends Packet<ClientPlayPacketListener>> getPacketId() {
+        return TYPE;
+    }
+
     public void write(PacketByteBuf buf) {
         buf.writeBytes(payload);
     }
 
     @Override
-    public void apply(ClientPlayNetworkHandler netHandler) {
+    public void apply(ClientPlayPacketListener netHandler) {
         NetByteBuf buffer = NetByteBuf.asNetByteBuf(Unpooled.wrappedBuffer(payload));
         CoreMinecraftNetUtil.onClientReceivePacket(netHandler, buffer);
         buffer.release();
