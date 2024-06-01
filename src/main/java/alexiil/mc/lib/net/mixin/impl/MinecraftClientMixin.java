@@ -7,6 +7,7 @@
  */
 package alexiil.mc.lib.net.mixin.impl;
 
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,8 +24,9 @@ import alexiil.mc.lib.net.mixin.api.ITickCounterMixin;
 @Mixin(value = MinecraftClient.class)
 public class MinecraftClientMixin {
 
+    @Final
     @Shadow
-    private RenderTickCounter renderTickCounter;
+    private RenderTickCounter.Dynamic renderTickCounter;
 
     @Inject(at = @At(value = "CONSTANT", args = { "stringValue=scheduledExecutables" }), method = "render(Z)V")
     private void afterIncrementTickCounter(CallbackInfo ci) {

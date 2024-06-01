@@ -17,8 +17,8 @@ import io.netty.handler.codec.CodecException;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.server.world.ChunkHolder;
+import net.minecraft.server.world.ServerChunkLoadingManager;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.server.world.ThreadedAnvilChunkStorage;
 import net.minecraft.util.math.ChunkPos;
 
 import alexiil.mc.lib.net.ActiveConnection.MultiTraceLines;
@@ -702,7 +702,7 @@ public class InternalMsgUtil {
         } else if (!(be.getWorld() instanceof ServerWorld svWorld)) {
             throwable = __BLOCK_ENTITY_NOT_ON_SERVER();
         } else {
-            ThreadedAnvilChunkStorage tacs = svWorld.getChunkManager().threadedAnvilChunkStorage;
+            ServerChunkLoadingManager tacs = svWorld.getChunkManager().chunkLoadingManager;
             IThreadedAnvilChunkStorageMixin mixinTacs = (IThreadedAnvilChunkStorageMixin) tacs;
             ChunkHolder chunkHolder = mixinTacs.libnetworkstack_getChunkHolder(new ChunkPos(be.getPos()));
             if (chunkHolder.getWorldChunk() == null) {

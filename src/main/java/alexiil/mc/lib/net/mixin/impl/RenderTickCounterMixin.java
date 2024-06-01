@@ -14,7 +14,7 @@ import net.minecraft.client.render.RenderTickCounter;
 
 import alexiil.mc.lib.net.mixin.api.ITickCounterMixin;
 
-@Mixin(RenderTickCounter.class)
+@Mixin(RenderTickCounter.Dynamic.class)
 public class RenderTickCounterMixin implements ITickCounterMixin {
 
     @Shadow

@@ -15,8 +15,8 @@ import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkHolder;
+import net.minecraft.server.world.ServerChunkLoadingManager;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.server.world.ThreadedAnvilChunkStorage;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 
@@ -42,7 +42,7 @@ public interface BlockEntityInitialData {
     public static Collection<ServerPlayerEntity> getPlayersWatching(ServerWorld svWorld, BlockPos pos) {
         // BUGFIX: for some reason minecraft occasionally ticks block entities with players in range
         // But *hasn't* sent the initial chunk data yet, since it hasn't technically finished loading?
-        ThreadedAnvilChunkStorage tacs = svWorld.getChunkManager().threadedAnvilChunkStorage;
+        ServerChunkLoadingManager tacs = svWorld.getChunkManager().chunkLoadingManager;
         IThreadedAnvilChunkStorageMixin mixinTacs = (IThreadedAnvilChunkStorageMixin) tacs;
         ChunkHolder chunkHolder = mixinTacs.libnetworkstack_getChunkHolder(new ChunkPos(pos));
         if (chunkHolder.getWorldChunk() == null) {

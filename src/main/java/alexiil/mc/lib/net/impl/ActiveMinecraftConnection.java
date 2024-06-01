@@ -24,7 +24,7 @@ public abstract class ActiveMinecraftConnection extends BufferedConnection {
     // As this is networking we need to ensure that we send as little data as possible
     // Which is why we use the full domain, and a fully descriptive path for it
     // (What?)
-    public static final Identifier PACKET_ID = new Identifier("libnetworkstack", "data");
+    public static final Identifier PACKET_ID = Identifier.tryParse("libnetworkstack", "data");
 
     private static final NetIdData NET_ID_COMPACT_PACKET = //
         McNetworkStack.ROOT.idData("libnetworkstack:compact_id", 4)//

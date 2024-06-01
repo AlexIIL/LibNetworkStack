@@ -36,7 +36,7 @@ public class PacketCodecDispatcherMixin {
     
     // Mixes into PacketCodecDispatcher to allow packets to encode themselves with custom integer ids
     @ModifyExpressionValue(method = "encode(Lio/netty/buffer/ByteBuf;Ljava/lang/Object;)V", at = @At(value = "INVOKE",
-        target = "Lit/unimi/dsi/fastutil/objects/Object2IntMap;getOrDefault(Ljava/lang/Object;I)I"))
+        target = "Lit/unimi/dsi/fastutil/objects/Object2IntMap;getOrDefault(Ljava/lang/Object;I)I", remap = false))
     private int getCustomPacketId(int original, ByteBuf buf_, Object packet) {
         if (packet instanceof IPacketCustomId<?> customId) {
             return customId.getReadId();
