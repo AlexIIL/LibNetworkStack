@@ -47,7 +47,7 @@ public class CompactDataPacketToClient implements IPacketCustomId<ClientPlayPack
     }
 
     @Override
-    public PacketType<? extends Packet<ClientPlayPacketListener>> getPacketId() {
+    public PacketType<? extends Packet<ClientPlayPacketListener>> getPacketType() {
         return TYPE;
     }
 
